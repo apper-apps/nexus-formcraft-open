@@ -62,7 +62,7 @@ const PublishedForm = () => {
     return errors;
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     
     const validationErrors = validateForm();
@@ -73,11 +73,19 @@ const PublishedForm = () => {
 
     setSubmitting(true);
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Import response service dynamically to avoid circular dependency
+      const { responseService } = await import('@/services/api/responseService');
+      
+      // Save form response
+      await responseService.create(form.Id, formData);
+      
+      // Increment form submission count
+      await formService.incrementSubmissionCount(form.Id);
+      
       setSubmitted(true);
-      toast.success("Form submitted successfully!");
+      toast.success(form.settings?.successMessage || "Form submitted successfully!");
     } catch (err) {
+      console.error('Form submission error:', err);
       toast.error("Failed to submit form. Please try again.");
     } finally {
       setSubmitting(false);

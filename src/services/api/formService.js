@@ -21,7 +21,7 @@ export const formService = {
   },
 
   async create(formData) {
-    await delay();
+await delay();
     const newForm = {
       Id: getNextId(),
       name: formData.name || "Untitled Form",
@@ -34,7 +34,7 @@ export const formService = {
       },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-isPublished: false,
+      isPublished: false,
       publishUrl: null,
       submissionCount: 0
     };
@@ -59,6 +59,7 @@ async create(formData) {
       ...formData,
       isPublished: false,
       publishUrl: null,
+      submissionCount: 0,
       createdAt: formData.createdAt || new Date().toISOString()
     };
     forms.unshift(newForm);
@@ -107,13 +108,24 @@ throw new Error("Form not found");
     return { ...forms[index] };
   },
 
-  async getByPublishId(publishId) {
+async getByPublishId(publishId) {
     await delay();
     const form = forms.find(f => f.publishId === publishId && f.isPublished);
     if (!form) {
       throw new Error("Published form not found");
     }
     return { ...form };
+  },
+
+  async incrementSubmissionCount(formId) {
+    await delay();
+    const formIndex = forms.findIndex(f => f.Id === parseInt(formId));
+    if (formIndex === -1) {
+      throw new Error("Form not found");
+    }
+    forms[formIndex].submissionCount = (forms[formIndex].submissionCount || 0) + 1;
+    forms[formIndex].updatedAt = new Date().toISOString();
+    return { ...forms[formIndex] };
   },
 
   async delete(id) {

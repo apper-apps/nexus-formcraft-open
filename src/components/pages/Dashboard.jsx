@@ -46,8 +46,12 @@ const handleCreateNew = () => {
     setShowTemplatesModal(false);
   };
 
-  const handleEditForm = (form) => {
+const handleEditForm = (form) => {
     navigate(`/builder/${form.Id}`);
+  };
+
+  const handleViewResponses = (form) => {
+    navigate(`/form/${form.Id}/responses`);
   };
 
   const handleDeleteForm = async (formId) => {
@@ -143,11 +147,12 @@ const handleCreateNew = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
             >
-              <FormCard
+<FormCard
                 form={form}
                 onEdit={handleEditForm}
                 onDelete={handleDeleteForm}
                 onDuplicate={handleDuplicateForm}
+                onViewResponses={handleViewResponses}
               />
             </motion.div>
           ))}
