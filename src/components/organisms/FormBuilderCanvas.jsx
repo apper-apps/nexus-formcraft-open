@@ -81,11 +81,12 @@ const handleDrop = (e) => {
     } else {
       // Handle new field from library
       const newField = {
-        Id: Date.now(),
+Id: Date.now(),
         type: data.type,
         label: data.label,
         placeholder: data.placeholder || "",
         required: false,
+        helpText: "",
         options: data.options || []
       };
       
@@ -259,15 +260,14 @@ const handleDrop = (e) => {
                           />
                           Required
                         </label>
-                      </div>
+</div>
                       
-<div 
+                      <div 
                         className="w-full text-sm text-gray-500 cursor-pointer hover:bg-gray-50 rounded px-2 py-1"
                         onClick={() => onFieldSelect(field.Id)}
                       >
                         {field.placeholder || 'Click to edit placeholder'}
                       </div>
-
                       {field.type === "select" && (
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-gray-700">Options:</label>

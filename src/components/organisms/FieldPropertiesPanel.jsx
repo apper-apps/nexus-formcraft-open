@@ -7,19 +7,21 @@ import Input from '@/components/atoms/Input';
 const FieldPropertiesPanel = ({ selectedFieldId, fields, onFieldsChange, onFieldSelect }) => {
   const [localLabel, setLocalLabel] = useState('');
   const [localPlaceholder, setLocalPlaceholder] = useState('');
-  const [localRequired, setLocalRequired] = useState(false);
-
+const [localRequired, setLocalRequired] = useState(false);
+  const [localHelpText, setLocalHelpText] = useState('');
   const selectedField = fields.find(field => field.Id === selectedFieldId);
 
   useEffect(() => {
     if (selectedField) {
       setLocalLabel(selectedField.label || '');
       setLocalPlaceholder(selectedField.placeholder || '');
-      setLocalRequired(selectedField.required || false);
+setLocalRequired(selectedField.required || false);
+      setLocalHelpText(selectedField.helpText || '');
     } else {
       setLocalLabel('');
       setLocalPlaceholder('');
       setLocalRequired(false);
+      setLocalHelpText('');
     }
   }, [selectedField]);
 
@@ -42,10 +44,14 @@ const FieldPropertiesPanel = ({ selectedFieldId, fields, onFieldsChange, onField
     setLocalPlaceholder(value);
     updateField({ placeholder: value });
   };
-
-  const handleRequiredChange = (value) => {
+const handleRequiredChange = (value) => {
     setLocalRequired(value);
     updateField({ required: value });
+  };
+
+  const handleHelpTextChange = (value) => {
+    setLocalHelpText(value);
+    updateField({ helpText: value });
   };
 
   const deleteField = () => {
@@ -156,8 +162,23 @@ const FieldPropertiesPanel = ({ selectedFieldId, fields, onFieldsChange, onField
                   className="w-full"
                 />
               </div>
-            )}
+)}
 
+            {/* Help Text Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Help Text
+              </label>
+              <Input
+                value={localHelpText}
+                onChange={(e) => handleHelpTextChange(e.target.value)}
+                placeholder="Enter help text for users"
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Additional guidance or instructions for this field
+              </p>
+            </div>
             {/* Required Toggle */}
             <div>
               <label className="flex items-center space-x-3">
