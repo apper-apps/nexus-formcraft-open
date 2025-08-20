@@ -1,16 +1,17 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
-import ApperIcon from "@/components/ApperIcon";
-import Button from "@/components/atoms/Button";
-import Card from "@/components/atoms/Card";
-import Loading from "@/components/ui/Loading";
-import Error from "@/components/ui/Error";
-import Empty from "@/components/ui/Empty";
 import { responseService } from "@/services/api/responseService";
 import { formService } from "@/services/api/formService";
+import ApperIcon from "@/components/ApperIcon";
+import Dashboard from "@/components/pages/Dashboard";
+import Error from "@/components/ui/Error";
+import Empty from "@/components/ui/Empty";
+import Loading from "@/components/ui/Loading";
+import Button from "@/components/atoms/Button";
+import Card from "@/components/atoms/Card";
 
 const FormResponses = () => {
   const { formId } = useParams();
@@ -103,7 +104,7 @@ const FormResponses = () => {
         </div>
       </motion.div>
 
-      {responses.length === 0 ? (
+{responses.length === 0 ? (
         <Empty
           title="No responses yet"
           description="This form hasn't received any submissions yet. Share your form link to start collecting responses."
@@ -111,37 +112,107 @@ const FormResponses = () => {
         />
       ) : (
         <motion.div
-          className="space-y-4"
+          className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          {responses.map((response, index) => (
-            <motion.div
-              key={response.Id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-            >
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-900">
+                    Response ID
+                  </th>
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-900">
+                    Submitted
+                  </th>
+                  {form.fields.map(field => (
+                    <th key={field.Id} className="text-left py-4 px-6 text-sm font-semibold text-gray-900 max-w-xs truncate">
+                      {field.label}
+                    </th>
+                  ))}
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-900">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {responses.map((response, index) => (
+                  <motion.tr
+                    key={response.Id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => handleViewResponse(response)}
+                  >
+                    <td className="py-4 px-6 text-sm font-medium text-gray-900">
+                      #{response.Id}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-600">
+                      {format(new Date(response.submittedAt), 'MMM dd, yyyy HH:mm')}
+                    </td>
+                    {form.fields.map(field => (
+                      <td key={field.Id} className="py-4 px-6 text-sm text-gray-600 max-w-xs truncate">
+                        {renderFieldValue(field, response.data[field.Id])}
+                      </td>
+                    ))}
+                    <td className="py-4 px-6 text-sm">
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewResponse(response)}
+                          className="text-primary-600 hover:text-primary-700"
+                        >
+                          <ApperIcon name="Eye" className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteResponse(response.Id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <ApperIcon name="Trash2" className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4 p-4">
+            {responses.map((response, index) => (
+              <motion.div
+                key={response.Id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50"
+                onClick={() => handleViewResponse(response)}
+              >
+                <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-sm font-semibold text-gray-900">
                       Response #{response.Id}
                     </h3>
-                    <p className="text-sm text-gray-500">
-                      Submitted {format(new Date(response.submittedAt), 'PPp')}
+                    <p className="text-xs text-gray-500">
+                      {format(new Date(response.submittedAt), 'MMM dd, yyyy HH:mm')}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleViewResponse(response)}
                       className="text-primary-600 hover:text-primary-700"
                     >
-                      <ApperIcon name="Eye" className="w-4 h-4 mr-2" />
-                      View
+                      <ApperIcon name="Eye" className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -154,26 +225,26 @@ const FormResponses = () => {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {form.fields.slice(0, 3).map(field => (
-                    <div key={field.Id}>
-                      <dt className="text-sm font-medium text-gray-500">{field.label}</dt>
-                      <dd className="text-sm text-gray-900 mt-1">
+                <div className="space-y-2">
+                  {form.fields.slice(0, 2).map(field => (
+                    <div key={field.Id} className="flex justify-between">
+                      <span className="text-xs font-medium text-gray-500 truncate pr-2">
+                        {field.label}:
+                      </span>
+                      <span className="text-xs text-gray-900 truncate max-w-[60%]">
                         {renderFieldValue(field, response.data[field.Id])}
-                      </dd>
+                      </span>
                     </div>
                   ))}
-                  {form.fields.length > 3 && (
-                    <div>
-                      <dt className="text-sm font-medium text-gray-500">
-                        +{form.fields.length - 3} more field{form.fields.length - 3 !== 1 ? 's' : ''}
-                      </dt>
+                  {form.fields.length > 2 && (
+                    <div className="text-xs text-gray-400 pt-1">
+                      +{form.fields.length - 2} more field{form.fields.length - 2 !== 1 ? 's' : ''}
                     </div>
-                  )}
+)}
                 </div>
-              </Card>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       )}
 
