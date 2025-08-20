@@ -10,7 +10,7 @@ import Button from "@/components/atoms/Button";
 import Card from "@/components/atoms/Card";
 import Input from "@/components/atoms/Input";
 
-function FormTemplatesModal({ isOpen, onClose }) {
+function FormTemplatesModal({ isOpen, onClose, onStartBlank }) {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState([]);
   const [filteredTemplates, setFilteredTemplates] = useState([]);
@@ -123,11 +123,11 @@ function FormTemplatesModal({ isOpen, onClose }) {
               <h2 className="text-2xl font-bold text-gray-900 font-display">Form Templates</h2>
               <p className="text-gray-600 mt-1">Choose from pre-built templates to get started quickly</p>
 </div>
-            <div className="flex gap-2">
+<div className="flex gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => props.onStartBlank?.()}
+                onClick={() => onStartBlank?.()}
                 className="px-4"
               >
                 Start Blank

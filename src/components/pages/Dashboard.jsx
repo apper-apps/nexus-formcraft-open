@@ -122,29 +122,14 @@ const handleEditForm = (form) => {
         </motion.div>
       </motion.div>
 
-      {forms.length === 0 ? (
-<Empty
+{forms.length === 0 ? (
+        <Empty
           title="No forms created yet"
           description="Get started by creating your first form with our intuitive drag-and-drop builder or choose from our pre-built templates"
           actionLabel="Create Your First Form"
-onAction={handleCreateNew}
+          onAction={handleCreateNew}
           icon="FormInput"
         />
-        
-        <FormTemplatesModal 
-          isOpen={showTemplatesModal} 
-          onClose={handleCloseTemplatesModal}
-          onStartBlank={handleStartBlank}
-        >
-          <Button
-            variant="secondary"
-            onClick={handleShowTemplates}
-            className="mt-4"
-          >
-            <ApperIcon name="Layout" size={16} className="mr-2" />
-            Browse Templates
-          </Button>
-        </Empty>
       ) : (
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -172,9 +157,10 @@ onAction={handleCreateNew}
 )}
 
       {/* Templates Modal */}
-      <FormTemplatesModal
+<FormTemplatesModal
         isOpen={showTemplatesModal}
         onClose={handleCloseTemplatesModal}
+        onStartBlank={handleStartBlank}
       />
     </div>
   );
