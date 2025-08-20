@@ -20,7 +20,7 @@ export const formService = {
     return forms.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   },
 
-  async create(formData) {
+async create(formData) {
 await delay();
 const newForm = {
       Id: getNextId(),
