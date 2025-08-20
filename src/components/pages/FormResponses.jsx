@@ -18,8 +18,9 @@ const FormResponses = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState(null);
   const [responses, setResponses] = useState([]);
-  const [loading, setLoading] = useState(true);
+const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
   const [selectedResponse, setSelectedResponse] = useState(null);
 
   useEffect(() => {
@@ -61,8 +62,37 @@ const FormResponses = () => {
 
   const handleCloseResponse = () => {
     setSelectedResponse(null);
-  };
+};
 
+  const handleExportCSV = async () => {
+    if (!form || responses.length === 0) {
+      toast.error("No responses to export");
+      return;
+    }
+
+    try {
+      setExporting(true);
+      const csvContent = responseService.exportToCSV(form, responses);
+      
+      // Create and download the CSV file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${form.name}-responses.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success(`Exported ${responses.length} responses to CSV`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export responses");
+    } finally {
+      setExporting(false);
+    }
+  };
   const renderFieldValue = (field, value) => {
     if (field.type === 'checkbox') {
       return value ? 'Yes' : 'No';
@@ -83,7 +113,7 @@ const FormResponses = () => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8"
+className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8"
       >
         <div>
           <Button
@@ -102,6 +132,18 @@ const FormResponses = () => {
             {responses.length} response{responses.length !== 1 ? 's' : ''} collected
           </p>
         </div>
+        {responses.length > 0 && (
+          <div className="mt-4 sm:mt-0">
+            <Button
+              onClick={handleExportCSV}
+              disabled={exporting}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <ApperIcon name="Download" className="w-4 h-4 mr-2" />
+              {exporting ? 'Exporting...' : 'Export to CSV'}
+            </Button>
+          </div>
+        )}
       </motion.div>
 
 {responses.length === 0 ? (
