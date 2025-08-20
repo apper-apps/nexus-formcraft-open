@@ -503,14 +503,16 @@ const handleFieldDragEnd = (e) => {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
           >
+>
           {fields.length === 0 ? (
             <div className="text-center py-16 text-gray-500">
               <ApperIcon name="MousePointer2" className="w-12 h-12 mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-medium mb-2">Drop form fields here</p>
               <p>Drag fields from the library to start building your form</p>
             </div>
-) : (
-            formSteps.length > 1 ? (
+          ) : (
+            <>
+              {formSteps.length > 1 ? (
                 // Multi-step form preview
                 <div className="space-y-6">
                   {/* Step Navigation */}
@@ -970,10 +972,11 @@ const handleFieldDragEnd = (e) => {
                     />
                   )}
                 </div>
-              )}
+)}
+            </>
           )}
-          </div>
         )}
+        </div>
       </div>
     </div>
   );

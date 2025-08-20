@@ -337,9 +337,12 @@ const errorClasses = hasError
             }
             
             // If no steps, show single step with all fields
-// If no steps, show single step with all fields
             const steps = formSteps.length > 0 ? formSteps : [form.fields.filter(field => field.type !== 'page-break')];
             const isMultiStep = steps.length > 1;
+
+            // Define validation function for current step
+            const validateCurrentStep = () => {
+              const currentStepFields = steps[currentStep - 1] || [];
               const errors = [];
               const newFieldErrors = {};
               
@@ -514,10 +517,10 @@ const errorClasses = hasError
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
+transition={{ duration: 0.3 }}
                   className="space-y-6"
                 >
-                  {currentStepFields.map(field => (
+                  {(steps[currentStep - 1] || []).map(field => (
                     <div key={field.Id} className="space-y-2">
                       {field.type !== "checkbox" && (
                         <label className="block text-sm font-medium text-gray-700">
