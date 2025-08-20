@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
@@ -17,7 +17,8 @@ const FormBuilderCanvas = ({
   onRedo
 }) => {
   const [dragOverIndex, setDragOverIndex] = useState(null);
-  const canvasRef = useRef(null);
+const canvasRef = useRef(null);
+  const [draggedFieldId, setDraggedFieldId] = useState(null);
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -47,29 +48,80 @@ const FormBuilderCanvas = ({
     }
   };
 
-  const handleDrop = (e) => {
+const handleDrop = (e) => {
     e.preventDefault();
     setDragOverIndex(null);
+    setDraggedFieldId(null);
     
-    const fieldData = JSON.parse(e.dataTransfer.getData("application/json"));
+    const transferData = e.dataTransfer.getData("application/json");
+    if (!transferData) return;
     
-    // Create new field with unique ID
-    const newField = {
-      Id: Date.now(),
-      type: fieldData.type,
-      label: fieldData.label,
-      placeholder: fieldData.placeholder || "",
-      required: false,
-      options: fieldData.options || []
-    };
-
-    // Insert at the calculated position
+    const data = JSON.parse(transferData);
     const insertIndex = dragOverIndex !== null ? dragOverIndex : fields.length;
     const newFields = [...fields];
-    newFields.splice(insertIndex, 0, newField);
+    
+    if (data.isReorder && data.fieldId) {
+      // Handle field reordering
+      const draggedFieldIndex = fields.findIndex(f => f.Id === data.fieldId);
+      if (draggedFieldIndex === -1) return;
+      
+      const draggedField = fields[draggedFieldIndex];
+      
+      // Remove from old position
+      newFields.splice(draggedFieldIndex, 1);
+      
+      // Calculate new insertion index (adjust for removal if needed)
+      let targetIndex = insertIndex;
+      if (draggedFieldIndex < insertIndex) {
+        targetIndex = insertIndex - 1;
+      }
+      
+      // Insert at new position
+      newFields.splice(targetIndex, 0, draggedField);
+    } else {
+      // Handle new field from library
+      const newField = {
+        Id: Date.now(),
+        type: data.type,
+        label: data.label,
+        placeholder: data.placeholder || "",
+        required: false,
+        options: data.options || []
+      };
+      
+      newFields.splice(insertIndex, 0, newField);
+    }
+    
     onFieldsChange(newFields);
   };
 
+  const handleFieldDragStart = (e, fieldId) => {
+    setDraggedFieldId(fieldId);
+    
+    const dragData = {
+      isReorder: true,
+      fieldId: fieldId
+    };
+    
+    e.dataTransfer.setData("application/json", JSON.stringify(dragData));
+    e.dataTransfer.effectAllowed = 'move';
+    
+    // Create drag preview
+    const dragPreview = e.target.cloneNode(true);
+    dragPreview.style.transform = 'rotate(5deg)';
+    dragPreview.style.opacity = '0.8';
+    document.body.appendChild(dragPreview);
+    e.dataTransfer.setDragImage(dragPreview, e.offsetX, e.offsetY);
+    
+    // Clean up preview after a short delay
+    setTimeout(() => {
+      document.body.removeChild(dragPreview);
+    }, 0);
+  };
+
+  const handleFieldDragEnd = (e) => {
+    setDraggedFieldId(null);
+  };
   const removeField = (fieldId) => {
     onFieldsChange(fields.filter(field => field.Id !== fieldId));
   };
@@ -147,20 +199,36 @@ const FormBuilderCanvas = ({
             </div>
           ) : (
             <div className="space-y-4">
-              {fields.map((field, index) => (
-<motion.div
+{fields.map((field, index) => (
+                <React.Fragment key={field.Id}>
+                  {/* Drop indicator */}
+                  {dragOverIndex === index && (
+                    <div className="h-1 bg-primary-400 rounded-full mb-2 animate-pulse shadow-sm" />
+                  )}
+                <motion.div
                   key={field.Id}
                   layout
-                  className={`group relative p-4 border rounded-lg hover:border-primary-300 transition-all duration-200 cursor-pointer ${
-                    selectedFieldId === field.Id 
-                      ? 'border-primary-500 bg-primary-50 shadow-md' 
-                      : 'border-gray-200'
+                  draggable
+                  onDragStart={(e) => handleFieldDragStart(e, field.Id)}
+                  onDragEnd={handleFieldDragEnd}
+                  className={`group relative p-4 border rounded-lg transition-all duration-200 cursor-grab active:cursor-grabbing ${
+                    draggedFieldId === field.Id 
+                      ? 'opacity-50 transform scale-95 border-primary-400 shadow-lg' 
+                      : selectedFieldId === field.Id 
+                        ? 'border-primary-500 bg-primary-50 shadow-md hover:border-primary-400' 
+                        : 'border-gray-200 hover:border-primary-300 hover:shadow-md'
                   }`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  onClick={() => onFieldSelect(field.Id)}
+                  onClick={() => !draggedFieldId && onFieldSelect(field.Id)}
+                  whileHover={{ scale: draggedFieldId === field.Id ? 0.95 : 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
+                  {/* Drag handle indicator */}
+                  <div className="absolute left-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <ApperIcon name="GripVertical" size={16} className="text-gray-400" />
+                  </div>
                   {dragOverIndex === index && (
                     <div className="absolute -top-1 left-0 right-0 h-0.5 bg-primary-500 rounded-full" />
                   )}
@@ -256,7 +324,8 @@ const FormBuilderCanvas = ({
                   {dragOverIndex === fields.length && index === fields.length - 1 && (
                     <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary-500 rounded-full" />
                   )}
-                </motion.div>
+</motion.div>
+                </React.Fragment>
               ))}
             </div>
           )}
