@@ -21,12 +21,15 @@ const FormBuilderCanvas = ({
   onShowPublishModal,
   formStyle,
   onStyleChange,
+  notificationSettings,
+  onNotificationSettingsChange,
   formSteps,
   currentStep,
   onStepChange
 }) => {
 const [dragOverIndex, setDragOverIndex] = useState(null);
   const [activeTab, setActiveTab] = useState('design');
+  const [emailInput, setEmailInput] = useState('');
 const canvasRef = useRef(null);
   const [draggedFieldId, setDraggedFieldId] = useState(null);
   const [dragStartPosition, setDragStartPosition] = useState(null);
@@ -312,11 +315,11 @@ const handleFieldDragEnd = (e) => {
 </div>
 
         {/* Tab Navigation */}
-        <div className="mb-6">
+<div className="mb-6">
           <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setActiveTab('design')}
-              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeTab === 'design'
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -329,7 +332,7 @@ const handleFieldDragEnd = (e) => {
             </button>
             <button
               onClick={() => setActiveTab('style')}
-              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                 activeTab === 'style'
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -338,6 +341,19 @@ const handleFieldDragEnd = (e) => {
               <div className="flex items-center justify-center gap-2">
                 <ApperIcon name="Palette" className="w-4 h-4" />
                 Style
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('notifications')}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'notifications'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <ApperIcon name="Mail" className="w-4 h-4" />
+                Notifications
               </div>
             </button>
           </div>
@@ -490,9 +506,132 @@ const handleFieldDragEnd = (e) => {
               </div>
             </div>
           </div>
+) : activeTab === 'notifications' ? (
+          // Notifications Tab Content
+          <div className="bg-white rounded-xl shadow-card p-8 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-display font-semibold text-gray-900">Email Notifications</h3>
+                <p className="text-sm text-gray-600 mt-1">Get notified when someone submits this form</p>
+              </div>
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={notificationSettings.enabled}
+                  onChange={(e) => onNotificationSettingsChange({
+                    ...notificationSettings,
+                    enabled: e.target.checked
+                  })}
+                  className="w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
+                />
+                <span className="text-sm font-medium text-gray-700">Enable notifications</span>
+              </label>
+            </div>
+
+            {notificationSettings.enabled && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Recipient Email Addresses
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      placeholder="Enter email address"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const email = emailInput.trim();
+                          if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                            if (!notificationSettings.recipients.includes(email)) {
+                              onNotificationSettingsChange({
+                                ...notificationSettings,
+                                recipients: [...notificationSettings.recipients, email]
+                              });
+                              setEmailInput('');
+                            }
+                          }
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const email = emailInput.trim();
+                        if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                          if (!notificationSettings.recipients.includes(email)) {
+                            onNotificationSettingsChange({
+                              ...notificationSettings,
+                              recipients: [...notificationSettings.recipients, email]
+                            });
+                            setEmailInput('');
+                          }
+                        }
+                      }}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      <ApperIcon name="Plus" className="w-4 h-4" />
+                      Add
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Press Enter or click Add to add an email address</p>
+                </div>
+
+                {notificationSettings.recipients.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Current Recipients ({notificationSettings.recipients.length})
+                    </label>
+                    <div className="space-y-2">
+                      {notificationSettings.recipients.map((email, index) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                          <div className="flex items-center gap-2">
+                            <ApperIcon name="Mail" className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-gray-700">{email}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newRecipients = notificationSettings.recipients.filter((_, i) => i !== index);
+                              onNotificationSettingsChange({
+                                ...notificationSettings,
+                                recipients: newRecipients
+                              });
+                            }}
+                            className="text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <ApperIcon name="X" className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <ApperIcon name="Info" className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium text-blue-800 mb-1">How it works</p>
+                      <ul className="text-blue-700 space-y-1">
+                        <li>• Email notifications will be sent whenever someone submits this form</li>
+                        <li>• All specified recipients will receive the notification</li>
+                        <li>• Notifications include form submission details and timestamp</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           // Design Tab Content (Form Canvas)
-<div
+        {/* Main Canvas Area */}
+        <div
             ref={canvasRef}
             className={`bg-white rounded-xl shadow-card p-8 min-h-96 transition-all duration-300 ${
               draggedFieldId ? "bg-primary-25" : ""

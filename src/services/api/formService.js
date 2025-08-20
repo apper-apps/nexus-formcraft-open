@@ -45,6 +45,10 @@ fields: (formData.fields || []).map(field => ({
         fontFamily: 'Inter',
         formWidth: 'medium'
       },
+      notifications: formData.notifications || {
+        enabled: false,
+        recipients: []
+      },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       isPublished: false,
@@ -101,7 +105,11 @@ const updatedForm = {
           operator: 'equals',
           value: ''
         }
-      }))
+      })),
+      notifications: formData.notifications || forms[index].notifications || {
+        enabled: false,
+        recipients: []
+      }
     };
     forms[index] = updatedForm;
     return updatedForm;

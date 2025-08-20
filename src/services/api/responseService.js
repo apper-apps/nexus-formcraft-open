@@ -1,5 +1,6 @@
 import { formsData } from "@/services/mockData/forms.json";
-
+import { emailService } from "./emailService";
+import { toast } from "react-toastify";
 // Create a copy to prevent direct mutation of imported data
 let responses = [];
 let nextResponseId = 1;
@@ -14,7 +15,7 @@ function getNextResponseId() {
 }
 
 export const responseService = {
-  async create(formId, responseData) {
+async create(formId, responseData) {
     await delay();
     const newResponse = {
       Id: getNextResponseId(),
@@ -26,6 +27,37 @@ export const responseService = {
     };
     
     responses.push(newResponse);
+    
+    // Send email notifications if enabled
+    try {
+      // Find the form to get notification settings
+      const { formService } = await import('./formService');
+      const form = await formService.getById(formId);
+      
+      if (form.notifications?.enabled && form.notifications?.recipients?.length > 0) {
+        // Prepare email data
+        const formDataForEmail = {};
+        Object.entries(responseData).forEach(([fieldId, value]) => {
+          const field = form.fields.find(f => f.Id === parseInt(fieldId));
+          const fieldLabel = field ? field.label : `Field ${fieldId}`;
+          formDataForEmail[fieldLabel] = value;
+        });
+        
+        // Send notification email
+        await emailService.sendNotification(
+          form.notifications.recipients,
+          `New form submission: ${form.name}`,
+          form.name,
+          formDataForEmail
+        );
+        
+        toast.success(`Notification emails sent to ${form.notifications.recipients.length} recipient(s)`);
+      }
+    } catch (emailError) {
+      console.error('Failed to send notification emails:', emailError);
+      toast.warning('Form submitted successfully, but notification emails could not be sent');
+    }
+    
     return { ...newResponse };
   },
 

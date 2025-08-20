@@ -23,11 +23,15 @@ const FormBuilder = () => {
   const [selectedFieldId, setSelectedFieldId] = useState(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
-  const [currentForm, setCurrentForm] = useState(null);
+const [currentForm, setCurrentForm] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 const [isEditing, setIsEditing] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [notificationSettings, setNotificationSettings] = useState({
+    enabled: false,
+    recipients: []
+  });
   
   // History management for undo/redo
   const [history, setHistory] = useState([{ formName: "", fields: [] }]);
@@ -62,9 +66,14 @@ const loadTemplate = async (templateId) => {
       setFormName(template.name);
       setFields(templateFields);
       setFormStyle({
-        primaryColor: '#8B7FFF',
+primaryColor: '#8B7FFF',
         fontFamily: 'Inter',
         formWidth: 'medium'
+      });
+      
+      setNotificationSettings({
+        enabled: false,
+        recipients: []
       });
       
       // Initialize history with template data
@@ -89,11 +98,17 @@ const loadForm = async () => {
       const form = await formService.getById(parseInt(formId));
       setFormName(form.name);
       setFields(form.fields || []);
-      setFormStyle(form.style || {
+setFormStyle(form.style || {
         primaryColor: '#8B7FFF',
         fontFamily: 'Inter',
         formWidth: 'medium'
       });
+      
+      setNotificationSettings(form.notifications || {
+        enabled: false,
+        recipients: []
+      });
+      
       setCurrentForm(form);
       setIsEditing(true);
       // Initialize history with loaded form
@@ -110,8 +125,12 @@ const loadForm = async () => {
   };
 
   // Save current state to history
-  const saveToHistory = (newFormName, newFields) => {
-    const newState = { formName: newFormName, fields: JSON.parse(JSON.stringify(newFields)) };
+const saveToHistory = (newFormName, newFields) => {
+    const newState = { 
+      formName: newFormName, 
+      fields: JSON.parse(JSON.stringify(newFields)),
+      notifications: JSON.parse(JSON.stringify(notificationSettings))
+    };
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newState);
     
@@ -131,10 +150,11 @@ const loadForm = async () => {
   const handleUndo = () => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
-      const prevState = history[newIndex];
+const prevState = history[newIndex];
       
       setFormName(prevState.formName);
       setFields(prevState.fields);
+      setNotificationSettings(prevState.notifications || { enabled: false, recipients: [] });
       setHistoryIndex(newIndex);
       setCanUndo(newIndex > 0);
       setCanRedo(true);
@@ -149,8 +169,9 @@ const loadForm = async () => {
       const newIndex = historyIndex + 1;
       const nextState = history[newIndex];
       
-      setFormName(nextState.formName);
+setFormName(nextState.formName);
       setFields(nextState.fields);
+      setNotificationSettings(nextState.notifications || { enabled: false, recipients: [] });
       setHistoryIndex(newIndex);
       setCanUndo(true);
       setCanRedo(newIndex < history.length - 1);
@@ -206,12 +227,17 @@ const loadForm = async () => {
   };
 
   // Enhanced form name change handler with history tracking
-  const handleFormNameChange = (newName) => {
+const handleFormNameChange = (newName) => {
     setFormName(newName);
     saveToHistory(newName, fields);
 };
 
-  // Enhanced style change handler with history tracking
+  const handleNotificationSettingsChange = (newSettings) => {
+    setNotificationSettings(newSettings);
+    saveToHistory(formName, fields);
+  };
+
+// Enhanced style change handler with history tracking
   const handleStyleChange = (newStyle) => {
     setFormStyle(newStyle);
     saveToHistory(formName, fields);
@@ -231,6 +257,7 @@ const formData = {
         name,
         fields,
         style: formStyle,
+        notifications: notificationSettings,
         createdAt: isEditing ? undefined : new Date().toISOString()
       };
 
@@ -302,6 +329,8 @@ return (
         onShowPublishModal={() => setShowPublishModal(true)}
         formStyle={formStyle}
         onStyleChange={handleStyleChange}
+        notificationSettings={notificationSettings}
+        onNotificationSettingsChange={handleNotificationSettingsChange}
         formSteps={getFormSteps()}
         currentStep={currentStep}
         onStepChange={setCurrentStep}
