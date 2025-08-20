@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import { format } from "date-fns";
+import React from "react";
 import ApperIcon from "@/components/ApperIcon";
-import Card from "@/components/atoms/Card";
 import Button from "@/components/atoms/Button";
+import Card from "@/components/atoms/Card";
 
 const FormCard = ({ form, onEdit, onDelete, onDuplicate }) => {
   const fieldCount = form.fields?.length || 0;
@@ -68,7 +69,7 @@ const FormCard = ({ form, onEdit, onDelete, onDuplicate }) => {
           >
             <ApperIcon name="Edit3" className="w-4 h-4 mr-2" />
             Edit
-          </Button>
+</Button>
           
           <Button
             variant="ghost"
@@ -82,7 +83,7 @@ const FormCard = ({ form, onEdit, onDelete, onDuplicate }) => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onDelete(form.Id)}
+            onClick={() => onDelete(form.id)}
             className="text-red-600 hover:text-red-700 hover:bg-red-50"
           >
             <ApperIcon name="Trash2" className="w-4 h-4" />
