@@ -1,10 +1,12 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import ApperIcon from '@/components/ApperIcon';
-import Button from '@/components/atoms/Button';
+import { toast } from "react-toastify";
+import ResponsesAnalytics from "./ResponsesAnalytics";
+import { formService } from "@/services/api/formService";
+import ApperIcon from "@/components/ApperIcon";
+import Button from "@/components/atoms/Button";
 import Card from "@/components/atoms/Card";
 
 const FormCard = ({ form, onEdit, onDelete, onDuplicate, onViewResponses }) => {
@@ -135,55 +137,12 @@ const FormCard = ({ form, onEdit, onDelete, onDuplicate, onViewResponses }) => {
             </div>
           )}
 
-          {activeTab === 'responses' && (
-            <div className="space-y-4">
-              <div className="text-center py-6">
-                <ApperIcon name="BarChart3" className="w-12 h-12 mx-auto text-primary-400 mb-3" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {submissionCount} Response{submissionCount !== 1 ? 's' : ''}
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  View and manage form submissions
-                </p>
-                {submissionCount > 0 && (
-                  <Button
-                    size="sm"
-                    onClick={() => onViewResponses(form)}
-                    className="mb-2"
-                  >
-                    <ApperIcon name="Eye" className="w-4 h-4 mr-2" />
-                    View All Responses
-                  </Button>
-                )}
-              </div>
-              
-              {form.isPublished && (
-                <div className="flex gap-2 pt-4 border-t border-gray-100">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.open(`/form/${form.publishId}`, '_blank')}
-                    className="flex-1 text-success hover:text-success-dark hover:bg-success-light"
-                  >
-                    <ApperIcon name="ExternalLink" className="w-4 h-4 mr-2" />
-                    View Form
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/form/${form.publishId}`);
-                      toast.success('Form link copied to clipboard!');
-                    }}
-                    className="flex-1 text-primary-600 hover:text-primary-700 hover:bg-primary-50"
-                  >
-                    <ApperIcon name="Copy" className="w-4 h-4 mr-2" />
-                    Copy Link
-                  </Button>
-                </div>
-              )}
-            </div>
+{activeTab === 'responses' && (
+            <ResponsesAnalytics 
+              form={form} 
+              submissionCount={submissionCount}
+              onViewResponses={onViewResponses}
+            />
           )}
 
           {form.isPublished && activeTab === 'overview' && (

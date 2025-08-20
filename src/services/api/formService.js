@@ -1,5 +1,5 @@
 import { formsData } from "@/services/mockData/forms.json";
-
+import { responseService } from "./responseService";
 // Create a copy to prevent direct mutation of imported data
 let forms = [...formsData];
 
@@ -136,8 +136,57 @@ async getByPublishId(publishId) {
     forms[formIndex].submissionCount = (forms[formIndex].submissionCount || 0) + 1;
     forms[formIndex].updatedAt = new Date().toISOString();
     return { ...forms[formIndex] };
-  },
+},
 
+  async getAnalytics(formId) {
+    await delay();
+    const form = forms.find(f => f.Id === parseInt(formId));
+    if (!form) {
+      throw new Error("Form not found");
+    }
+
+    const responses = await responseService.getByFormId(formId);
+    const totalResponses = responses.length;
+    
+    // Calculate this week's responses
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    const thisWeekResponses = responses.filter(r => 
+      new Date(r.submittedAt) >= oneWeekAgo
+    ).length;
+
+    // Calculate previous week's responses for trend comparison
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+    
+    const lastWeekResponses = responses.filter(r => {
+      const responseDate = new Date(r.submittedAt);
+      return responseDate >= twoWeeksAgo && responseDate < oneWeekAgo;
+    }).length;
+
+    // Calculate trend
+    let trend = 'stable';
+    if (thisWeekResponses > lastWeekResponses) {
+      trend = 'up';
+    } else if (thisWeekResponses < lastWeekResponses) {
+      trend = 'down';
+    }
+
+    // Get last submission date
+    const lastSubmission = responses.length > 0 
+      ? responses.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0].submittedAt
+      : null;
+
+    return {
+      totalResponses,
+      thisWeekResponses,
+      lastWeekResponses,
+      trend,
+      lastSubmissionDate: lastSubmission,
+      responseRate: totalResponses > 0 ? Math.round((thisWeekResponses / 7) * 100) : 0
+    };
+  },
   async delete(id) {
     await delay();
     const index = forms.findIndex(f => f.Id === id);
