@@ -1,22 +1,23 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
+import { formService } from "@/services/api/formService";
 import ApperIcon from "@/components/ApperIcon";
-import Button from "@/components/atoms/Button";
 import FormCard from "@/components/organisms/FormCard";
 import FormTemplatesModal from "@/components/organisms/FormTemplatesModal";
-import Loading from "@/components/ui/Loading";
 import Error from "@/components/ui/Error";
 import Empty from "@/components/ui/Empty";
-import { formService } from "@/services/api/formService";
+import Loading from "@/components/ui/Loading";
+import Button from "@/components/atoms/Button";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-const [forms, setForms] = useState([]);
+  const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+  
   useEffect(() => {
     loadForms();
   }, []);
@@ -32,18 +33,23 @@ const [forms, setForms] = useState([]);
     } finally {
       setLoading(false);
     }
-  };
+};
 
-const handleCreateNew = () => {
-    navigate("/builder");
-  };
-
-  const handleShowTemplates = () => {
+  const handleCreateNew = () => {
     setShowTemplatesModal(true);
   };
 
   const handleCloseTemplatesModal = () => {
     setShowTemplatesModal(false);
+  };
+
+  const handleStartBlank = () => {
+    setShowTemplatesModal(false);
+    navigate("/builder");
+  };
+
+  const handleShowTemplates = () => {
+    setShowTemplatesModal(true);
   };
 
 const handleEditForm = (form) => {
@@ -109,7 +115,7 @@ const handleEditForm = (form) => {
           transition={{ duration: 0.4, delay: 0.1 }}
           className="mt-4 sm:mt-0"
         >
-          <Button onClick={handleCreateNew} className="w-full sm:w-auto">
+<Button onClick={handleCreateNew} className="w-full sm:w-auto">
             <ApperIcon name="Plus" className="w-5 h-5 mr-2" />
             Create New Form
           </Button>
@@ -121,8 +127,14 @@ const handleEditForm = (form) => {
           title="No forms created yet"
           description="Get started by creating your first form with our intuitive drag-and-drop builder or choose from our pre-built templates"
           actionLabel="Create Your First Form"
-          onAction={handleCreateNew}
+onAction={handleCreateNew}
           icon="FormInput"
+        />
+        
+        <FormTemplatesModal 
+          isOpen={showTemplatesModal} 
+          onClose={handleCloseTemplatesModal}
+          onStartBlank={handleStartBlank}
         >
           <Button
             variant="secondary"

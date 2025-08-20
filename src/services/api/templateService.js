@@ -4,7 +4,7 @@ import { templatesData } from "@/services/mockData/templates.json";
 let templates = [...templatesData];
 
 // Simulate API delay
-const delay = () => new Promise(resolve => setTimeout(resolve, 500));
+const delay = () => new Promise(resolve => setTimeout(resolve, 300));
 
 export const templateService = {
   async getAll() {
@@ -21,11 +21,31 @@ export const templateService = {
     if (!template) {
       throw new Error('Template not found');
     }
-    return { ...template };
+    // Return deep copy to prevent mutations
+    return JSON.parse(JSON.stringify(template));
   },
 
   async getByCategory(category) {
     await delay();
-    return templates.filter(t => t.category === category).slice();
+    return templates.filter(t => t.category === category).map(t => JSON.parse(JSON.stringify(t)));
+  },
+
+  async getFeatured() {
+    await delay();
+    // Return the most commonly used templates
+    const featuredIds = [1, 2, 3, 4, 5];
+    return templates.filter(t => featuredIds.includes(t.Id)).map(t => JSON.parse(JSON.stringify(t)));
+  },
+
+  async search(query) {
+    await delay();
+    if (!query) return templates.slice();
+    
+    const lowerQuery = query.toLowerCase();
+    return templates.filter(t => 
+      t.name.toLowerCase().includes(lowerQuery) ||
+      t.description.toLowerCase().includes(lowerQuery) ||
+      t.category.toLowerCase().includes(lowerQuery)
+    ).map(t => JSON.parse(JSON.stringify(t)));
   }
 };

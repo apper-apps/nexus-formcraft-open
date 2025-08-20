@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { templateService } from "@/services/api/templateService";
+import { formService } from "@/services/api/formService";
 import ApperIcon from "@/components/ApperIcon";
+import Loading from "@/components/ui/Loading";
 import Button from "@/components/atoms/Button";
 import Card from "@/components/atoms/Card";
 import Input from "@/components/atoms/Input";
-import { templateService } from "@/services/api/templateService";
-import { formService } from "@/services/api/formService";
 
 function FormTemplatesModal({ isOpen, onClose }) {
   const navigate = useNavigate();
@@ -121,15 +122,25 @@ function FormTemplatesModal({ isOpen, onClose }) {
             <div>
               <h2 className="text-2xl font-bold text-gray-900 font-display">Form Templates</h2>
               <p className="text-gray-600 mt-1">Choose from pre-built templates to get started quickly</p>
+</div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => props.onStartBlank?.()}
+                className="px-4"
+              >
+                Start Blank
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClose}
+                className="p-2"
+              >
+                <ApperIcon name="X" size={20} />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="p-2"
-            >
-              <ApperIcon name="X" size={20} />
-            </Button>
           </div>
 
           {/* Search and Filters */}

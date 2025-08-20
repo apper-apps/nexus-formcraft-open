@@ -13,7 +13,7 @@ import FormBuilderCanvas from "@/components/organisms/FormBuilderCanvas";
 const FormBuilder = () => {
   const navigate = useNavigate();
   const { formId } = useParams();
-const [formName, setFormName] = useState("");
+  const [formName, setFormName] = useState("");
   const [fields, setFields] = useState([]);
   const [formStyle, setFormStyle] = useState({
     primaryColor: '#8B7FFF',
@@ -21,28 +21,71 @@ const [formName, setFormName] = useState("");
     formWidth: 'medium'
   });
   const [selectedFieldId, setSelectedFieldId] = useState(null);
-const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [currentForm, setCurrentForm] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  
   // History management for undo/redo
   const [history, setHistory] = useState([{ formName: "", fields: [] }]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const templateId = urlParams.get('template');
+    
     if (formId) {
       loadForm();
+    } else if (templateId) {
+      loadTemplate(parseInt(templateId));
     }
   }, [formId]);
 
-  const loadForm = async () => {
+  const loadTemplate = async (templateId) => {
     try {
       setError("");
       setLoading(true);
-const form = await formService.getById(parseInt(formId));
+      const { templateService } = await import('@/services/api/templateService');
+      const template = await templateService.getById(templateId);
+      
+      // Generate fields with unique IDs
+      const templateFields = template.fields.map((field, index) => ({
+        id: Date.now() + index,
+        ...field
+      }));
+      
+      setFormName(template.name);
+      setFields(templateFields);
+      setFormStyle({
+        primaryColor: '#8B7FFF',
+        fontFamily: 'Inter',
+        formWidth: 'medium'
+      });
+      
+      // Initialize history with template data
+      const initialState = { formName: template.name, fields: templateFields };
+      setHistory([initialState]);
+      setHistoryIndex(0);
+      setCanUndo(false);
+      setCanRedo(false);
+      
+      toast.success(`Template "${template.name}" loaded successfully!`);
+    } catch (error) {
+      setError("Failed to load template");
+      toast.error("Failed to load template");
+    }
+    setLoading(false);
+  };
+
+const loadForm = async () => {
+    try {
+      setError("");
+      setLoading(true);
+      const form = await formService.getById(parseInt(formId));
       setFormName(form.name);
       setFields(form.fields || []);
       setFormStyle(form.style || {
