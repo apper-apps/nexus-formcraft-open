@@ -502,7 +502,6 @@ const handleFieldDragEnd = (e) => {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-          >
 >
           {fields.length === 0 ? (
             <div className="text-center py-16 text-gray-500">
@@ -974,9 +973,9 @@ const handleFieldDragEnd = (e) => {
                 </div>
 )}
             </>
-          )}
-        )}
+)}
         </div>
+        )}
       </div>
     </div>
   );
