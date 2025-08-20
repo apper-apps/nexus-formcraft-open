@@ -157,27 +157,31 @@ const handleDrop = (e) => {
       // Show success feedback
       console.log('Field reordered successfully');
     } else {
-      // Handle new field from library
+// Handle new field from library
       const newField = {
-        Id: Date.now() + Math.random(), // Ensure unique ID
+        Id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000), // Ensure unique integer ID
         type: data.type,
-        label: data.label,
-        placeholder: data.placeholder || "",
+        label: data.label || `${data.type.charAt(0).toUpperCase() + data.type.slice(1)} Field`,
+        placeholder: data.placeholder || `Enter ${data.type === 'textarea' ? 'text' : data.type}`,
         required: false,
         helpText: "",
-        options: data.options || [],
-        min: data.min || (data.type === "number" ? 0 : undefined),
-        max: data.max || (data.type === "number" ? 100 : undefined),
-        maxRating: data.maxRating || (data.type === "rating" ? 5 : undefined),
-        acceptedTypes: data.acceptedTypes || (data.type === "file" ? ".pdf,.doc,.docx,.jpg,.png" : undefined),
-        stepTitle: data.type === "page-break" ? "New Step" : undefined
+        options: data.type === "select" || data.type === "radio" ? (data.options && data.options.length > 0 ? data.options : ["Option 1", "Option 2"]) : [],
+        min: data.type === "number" ? (data.min !== undefined ? data.min : 0) : undefined,
+        max: data.type === "number" ? (data.max !== undefined ? data.max : 100) : undefined,
+        maxRating: data.type === "rating" ? (data.maxRating || 5) : undefined,
+        acceptedTypes: data.type === "file" ? (data.acceptedTypes || ".pdf,.doc,.docx,.jpg,.png") : undefined,
+        stepTitle: data.type === "page-break" ? (data.stepTitle || "New Step") : undefined,
+        // Ensure all fields have complete structure for immediate rendering
+        showCondition: null,
+        validationRules: [],
+        position: insertIndex
       };
       
       newFields.splice(insertIndex, 0, newField);
       onFieldsChange(newFields);
       
       // Show success feedback and auto-select the new field
-      console.log(`${data.label} added to form successfully`);
+      console.log(`${data.label || newField.label} added to form successfully`);
       setTimeout(() => {
         onFieldSelect(newField.Id);
       }, 100);
