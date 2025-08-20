@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import ApperIcon from "@/components/ApperIcon";
-import Button from "@/components/atoms/Button";
-import Loading from "@/components/ui/Loading";
-import Error from "@/components/ui/Error";
 import { formService } from "@/services/api/formService";
+import ApperIcon from "@/components/ApperIcon";
+import Error from "@/components/ui/Error";
+import Loading from "@/components/ui/Loading";
+import Button from "@/components/atoms/Button";
 
 const PublishedForm = () => {
   const { publishId } = useParams();
@@ -142,9 +142,9 @@ const renderField = (field) => {
     const value = formData[field.Id] || "";
     const hasError = fieldErrors[field.Id];
     const baseInputClasses = "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all duration-200";
-    const errorClasses = hasError 
+const errorClasses = hasError 
       ? "border-red-300 focus:border-red-500 focus:ring-red-500" 
-      : "border-gray-300 focus:border-primary-500 focus:ring-primary-500";
+      : "border-gray-300 focus:border-[var(--primary-500,#8B7FFF)] focus:ring-[var(--primary-500,#8B7FFF)]";
 
     switch (field.type) {
       case "text":
@@ -278,7 +278,27 @@ const renderField = (field) => {
 
   return (
     <div className="min-h-screen bg-surface">
-      <div className="max-w-2xl mx-auto px-4 py-8">
+<div 
+        className={`px-4 py-8 mx-auto ${
+          form.style?.formWidth === 'narrow' ? 'max-w-lg' :
+          form.style?.formWidth === 'wide' ? 'max-w-4xl' : 'max-w-2xl'
+        } ${
+          form.style?.fontFamily === 'Plus Jakarta Sans' ? 'font-display' :
+          form.style?.fontFamily === 'Georgia' ? 'font-serif' :
+          form.style?.fontFamily === 'Courier New' ? 'font-mono' : 'font-sans'
+        }`}
+        style={{
+          '--primary-color': form.style?.primaryColor || '#8B7FFF',
+          '--primary-50': (form.style?.primaryColor || '#8B7FFF') + '0D',
+          '--primary-100': (form.style?.primaryColor || '#8B7FFF') + '1A',
+          '--primary-200': (form.style?.primaryColor || '#8B7FFF') + '33',
+          '--primary-300': (form.style?.primaryColor || '#8B7FFF') + '4D',
+          '--primary-400': (form.style?.primaryColor || '#8B7FFF') + '66',
+          '--primary-500': form.style?.primaryColor || '#8B7FFF',
+          '--primary-600': (form.style?.primaryColor || '#8B7FFF') + 'E6',
+          '--primary-700': (form.style?.primaryColor || '#8B7FFF') + 'CC'
+        }}
+      >
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -320,15 +340,12 @@ const renderField = (field) => {
               >
                 {submitting ? (
                   <>
-                    <ApperIcon name="Loader2" className="w-4 h-4 animate-spin" />
+<ApperIcon name="Loader2" className="w-4 h-4 animate-spin" />
                     Submitting...
                   </>
                 ) : (
-                  <>
-                    <ApperIcon name="Send" className="w-4 h-4" />
-                    Submit Form
-                  </>
-                )}
+                  form.settings?.submitButtonText || "Submit"
+)}
               </Button>
             </div>
           </form>

@@ -22,7 +22,7 @@ export const formService = {
 
   async create(formData) {
 await delay();
-    const newForm = {
+const newForm = {
       Id: getNextId(),
       name: formData.name || "Untitled Form",
       description: formData.description || "",
@@ -31,6 +31,11 @@ await delay();
         submitButtonText: "Submit",
         successMessage: "Thank you for your submission!",
         allowMultipleSubmissions: true
+      },
+      style: formData.style || {
+        primaryColor: '#8B7FFF',
+        fontFamily: 'Inter',
+        formWidth: 'medium'
       },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -58,9 +63,14 @@ async create(formData) {
       Id: Math.max(...forms.map(f => f.Id), 0) + 1,
       ...formData,
       isPublished: false,
-      publishUrl: null,
+publishUrl: null,
       submissionCount: 0,
-      createdAt: formData.createdAt || new Date().toISOString()
+      createdAt: formData.createdAt || new Date().toISOString(),
+      style: formData.style || {
+        primaryColor: '#8B7FFF',
+        fontFamily: 'Inter',
+        formWidth: 'medium'
+      }
     };
     forms.unshift(newForm);
     return { ...newForm };

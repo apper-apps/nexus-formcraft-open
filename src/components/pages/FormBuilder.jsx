@@ -15,6 +15,11 @@ const FormBuilder = () => {
   const { formId } = useParams();
 const [formName, setFormName] = useState("");
   const [fields, setFields] = useState([]);
+  const [formStyle, setFormStyle] = useState({
+    primaryColor: '#8B7FFF',
+    fontFamily: 'Inter',
+    formWidth: 'medium'
+  });
   const [selectedFieldId, setSelectedFieldId] = useState(null);
 const [showSaveModal, setShowSaveModal] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
@@ -40,6 +45,11 @@ const [showSaveModal, setShowSaveModal] = useState(false);
 const form = await formService.getById(parseInt(formId));
       setFormName(form.name);
       setFields(form.fields || []);
+      setFormStyle(form.style || {
+        primaryColor: '#8B7FFF',
+        fontFamily: 'Inter',
+        formWidth: 'medium'
+      });
       setCurrentForm(form);
       setIsEditing(true);
       // Initialize history with loaded form
@@ -133,6 +143,12 @@ const form = await formService.getById(parseInt(formId));
   const handleFormNameChange = (newName) => {
     setFormName(newName);
     saveToHistory(newName, fields);
+};
+
+  // Enhanced style change handler with history tracking
+  const handleStyleChange = (newStyle) => {
+    setFormStyle(newStyle);
+    saveToHistory(formName, fields);
   };
 
   const handleSave = () => {
@@ -145,9 +161,10 @@ const form = await formService.getById(parseInt(formId));
 
   const handleSaveForm = async (name) => {
     try {
-      const formData = {
+const formData = {
         name,
         fields,
+        style: formStyle,
         createdAt: isEditing ? undefined : new Date().toISOString()
       };
 
@@ -217,8 +234,9 @@ return (
         onPublish={handlePublish}
         onUnpublish={handleUnpublish}
         onShowPublishModal={() => setShowPublishModal(true)}
+formStyle={formStyle}
+        onStyleChange={handleStyleChange}
       />
-      
       <FieldPropertiesPanel
         selectedFieldId={selectedFieldId}
         fields={fields}
