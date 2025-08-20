@@ -87,15 +87,37 @@
   @apply !bg-info;
 }
 
-/* Drag and Drop Styles */
+/* Enhanced Drag and Drop Styles */
 .dragging {
-  @apply opacity-50 transform scale-95;
+  @apply opacity-60 transform scale-95 cursor-grabbing;
+  filter: brightness(1.1);
+  box-shadow: 0 8px 24px rgba(139, 127, 255, 0.2);
 }
 
 .drag-preview {
-  @apply absolute pointer-events-none z-50 transform -translate-x-2 -translate-y-2 opacity-80;
+  @apply absolute pointer-events-none z-50 transform -translate-x-2 -translate-y-2 opacity-90;
+  filter: drop-shadow(0 12px 32px rgba(139, 127, 255, 0.3));
 }
 
+.drop-zone-highlight {
+  @apply bg-gradient-to-br from-primary-50 to-primary-100 border-2 border-primary-400 border-dashed;
+  animation: pulse 2s infinite;
+}
+
+.field-item:hover {
+  @apply cursor-grab;
+}
+
+.field-item:active {
+  @apply cursor-grabbing;
+}
+
+/* Enhanced drop indicators */
+.drop-indicator {
+  @apply h-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-400 rounded-full;
+  box-shadow: 0 0 8px rgba(139, 127, 255, 0.4);
+  animation: pulse 1.5s infinite;
+}
 /* Form Preview Styles */
 .form-preview {
   @apply bg-white rounded-lg p-6 border border-gray-200 shadow-sm;

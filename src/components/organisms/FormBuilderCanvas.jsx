@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
@@ -30,13 +30,29 @@ const FormBuilderCanvas = ({
 const [dragOverIndex, setDragOverIndex] = useState(null);
   const [activeTab, setActiveTab] = useState('design');
   const [emailInput, setEmailInput] = useState('');
-const canvasRef = useRef(null);
+  const canvasRef = useRef(null);
   const [draggedFieldId, setDraggedFieldId] = useState(null);
   const [dragStartPosition, setDragStartPosition] = useState(null);
+  const [isDraggedOver, setIsDraggedOver] = useState(false);
+  const [draggedFromLibrary, setDraggedFromLibrary] = useState(false);
 
 const handleDragOver = (e) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    
+    // Determine if this is from library or reordering
+    const transferData = e.dataTransfer.getData("application/json");
+    let isFromLibrary = true;
+    
+    try {
+      const data = JSON.parse(transferData);
+      isFromLibrary = !data.isReorder;
+    } catch (err) {
+      isFromLibrary = true;
+    }
+    
+    e.dataTransfer.dropEffect = isFromLibrary ? 'copy' : 'move';
+    setIsDraggedOver(true);
+    setDraggedFromLibrary(isFromLibrary);
     
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -60,39 +76,61 @@ const handleDragOver = (e) => {
       }
     }
     
-    // Don't set drag over index if it's the same as current position
-    const draggedIndex = fields.findIndex(f => f.Id === draggedFieldId);
-    if (draggedIndex !== -1 && (insertIndex === draggedIndex || insertIndex === draggedIndex + 1)) {
-      setDragOverIndex(null);
-    } else {
-      setDragOverIndex(insertIndex);
+    // Don't set drag over index if it's the same as current position (for reordering)
+    if (!isFromLibrary) {
+      const draggedIndex = fields.findIndex(f => f.Id === draggedFieldId);
+      if (draggedIndex !== -1 && (insertIndex === draggedIndex || insertIndex === draggedIndex + 1)) {
+        setDragOverIndex(null);
+        return;
+      }
     }
+    
+    setDragOverIndex(insertIndex);
   };
 
-  const handleDragLeave = (e) => {
+const handleDragLeave = (e) => {
     if (!canvasRef.current?.contains(e.relatedTarget)) {
       setDragOverIndex(null);
+      setIsDraggedOver(false);
+      setDraggedFromLibrary(false);
     }
   };
 
 const handleDrop = (e) => {
     e.preventDefault();
     const finalDragOverIndex = dragOverIndex;
+    
+    // Reset all drag states
     setDragOverIndex(null);
     setDraggedFieldId(null);
     setDragStartPosition(null);
+    setIsDraggedOver(false);
+    setDraggedFromLibrary(false);
     
     const transferData = e.dataTransfer.getData("application/json");
-    if (!transferData) return;
+    if (!transferData) {
+      console.warn('No transfer data found');
+      return;
+    }
     
-    const data = JSON.parse(transferData);
+    let data;
+    try {
+      data = JSON.parse(transferData);
+    } catch (err) {
+      console.error('Failed to parse transfer data:', err);
+      return;
+    }
+    
     const insertIndex = finalDragOverIndex !== null ? finalDragOverIndex : fields.length;
     const newFields = [...fields];
     
     if (data.isReorder && data.fieldId) {
       // Handle field reordering with improved logic
       const draggedFieldIndex = fields.findIndex(f => f.Id === data.fieldId);
-      if (draggedFieldIndex === -1) return;
+      if (draggedFieldIndex === -1) {
+        console.warn('Dragged field not found');
+        return;
+      }
       
       // Don't reorder if dropping in the same position
       if (insertIndex === draggedFieldIndex || insertIndex === draggedFieldIndex + 1) {
@@ -115,10 +153,13 @@ const handleDrop = (e) => {
       
       // Update the fields immediately for live preview
       onFieldsChange(newFields);
+      
+      // Show success feedback
+      console.log('Field reordered successfully');
     } else {
       // Handle new field from library
-const newField = {
-        Id: Date.now(),
+      const newField = {
+        Id: Date.now() + Math.random(), // Ensure unique ID
         type: data.type,
         label: data.label,
         placeholder: data.placeholder || "",
@@ -134,6 +175,12 @@ const newField = {
       
       newFields.splice(insertIndex, 0, newField);
       onFieldsChange(newFields);
+      
+      // Show success feedback and auto-select the new field
+      console.log(`${data.label} added to form successfully`);
+      setTimeout(() => {
+        onFieldSelect(newField.Id);
+      }, 100);
     }
   };
 
@@ -631,13 +678,15 @@ const handleFieldDragEnd = (e) => {
 ) : (
           <>
             {/* Design Tab Content (Form Canvas) */}
-            {/* Main Canvas Area */}
+{/* Main Canvas Area */}
             <div
               ref={canvasRef}
-              className={`bg-white rounded-xl shadow-card p-8 min-h-96 transition-all duration-300 ${
-                draggedFieldId ? "bg-primary-25" : ""
+              className={`bg-white rounded-xl shadow-card p-8 min-h-96 transition-all duration-300 relative ${
+                isDraggedOver && draggedFromLibrary ? "bg-gradient-to-br from-primary-50 to-primary-100 border-2 border-primary-400 border-dashed shadow-xl" :
+                isDraggedOver ? "bg-primary-25 border-2 border-primary-300 border-dashed shadow-lg" :
+                draggedFieldId ? "bg-primary-25" : "bg-white"
               } ${
-                dragOverIndex !== null ? "border-2 border-primary-400 border-dashed shadow-lg" : "border border-gray-200"
+                dragOverIndex !== null ? "shadow-2xl" : "border border-gray-200"
               }`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}

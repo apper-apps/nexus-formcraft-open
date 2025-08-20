@@ -90,9 +90,50 @@ description: "Star rating field",
     }
   ];
 
-  const handleDragStart = (e, field) => {
+const handleDragStart = (e, field) => {
+    // Set drag data
     e.dataTransfer.setData("application/json", JSON.stringify(field));
     e.dataTransfer.effectAllowed = "copy";
+    
+    // Create enhanced drag preview
+    const sourceElement = e.currentTarget;
+    const dragPreview = sourceElement.cloneNode(true);
+    
+    // Style the drag preview for better visual feedback
+    dragPreview.style.position = 'absolute';
+    dragPreview.style.top = '-1000px';
+    dragPreview.style.left = '-1000px';
+    dragPreview.style.width = `${sourceElement.offsetWidth}px`;
+    dragPreview.style.transform = 'rotate(1deg) scale(1.05)';
+    dragPreview.style.opacity = '0.95';
+    dragPreview.style.boxShadow = '0 12px 32px rgba(139, 127, 255, 0.3)';
+    dragPreview.style.border = '2px solid #8B7FFF';
+    dragPreview.style.borderRadius = '12px';
+    dragPreview.style.pointerEvents = 'none';
+    dragPreview.style.zIndex = '9999';
+    dragPreview.style.background = 'linear-gradient(135deg, #f4f2ff 0%, #ebe7ff 100%)';
+    
+    document.body.appendChild(dragPreview);
+    
+    // Set drag image with proper positioning
+    const rect = sourceElement.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    e.dataTransfer.setDragImage(dragPreview, offsetX, offsetY);
+    
+    // Add dragging class to source element
+    sourceElement.classList.add('dragging');
+    
+    // Clean up preview after drag starts
+    setTimeout(() => {
+      if (document.body.contains(dragPreview)) {
+        document.body.removeChild(dragPreview);
+      }
+    }, 1);
+  };
+
+  const handleDragEnd = (e) => {
+    e.currentTarget.classList.remove('dragging');
   };
 
   return (
@@ -105,14 +146,18 @@ description: "Star rating field",
         {fieldTypes.map((field, index) => (
           <motion.div
             key={field.type}
-            className="field-item p-4"
+className="field-item p-4 select-none"
             draggable
             onDragStart={(e) => handleDragStart(e, field)}
+            onDragEnd={handleDragEnd}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
+            style={{ cursor: 'grab' }}
+            onMouseDown={(e) => e.currentTarget.style.cursor = 'grabbing'}
+            onMouseUp={(e) => e.currentTarget.style.cursor = 'grab'}
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg flex items-center justify-center flex-shrink-0">
