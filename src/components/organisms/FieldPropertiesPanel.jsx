@@ -5,23 +5,38 @@ import Button from '@/components/atoms/Button';
 import Input from '@/components/atoms/Input';
 
 const FieldPropertiesPanel = ({ selectedFieldId, fields, onFieldsChange, onFieldSelect }) => {
-  const [localLabel, setLocalLabel] = useState('');
+const [localLabel, setLocalLabel] = useState('');
   const [localPlaceholder, setLocalPlaceholder] = useState('');
-const [localRequired, setLocalRequired] = useState(false);
+  const [localRequired, setLocalRequired] = useState(false);
   const [localHelpText, setLocalHelpText] = useState('');
+  const [localOptions, setLocalOptions] = useState([]);
+  const [localMin, setLocalMin] = useState('');
+  const [localMax, setLocalMax] = useState('');
+  const [localMaxRating, setLocalMaxRating] = useState(5);
+  const [localAcceptedTypes, setLocalAcceptedTypes] = useState('');
   const selectedField = fields.find(field => field.Id === selectedFieldId);
 
-  useEffect(() => {
+useEffect(() => {
     if (selectedField) {
       setLocalLabel(selectedField.label || '');
       setLocalPlaceholder(selectedField.placeholder || '');
-setLocalRequired(selectedField.required || false);
+      setLocalRequired(selectedField.required || false);
       setLocalHelpText(selectedField.helpText || '');
+      setLocalOptions(selectedField.options || []);
+      setLocalMin(selectedField.min || '');
+      setLocalMax(selectedField.max || '');
+      setLocalMaxRating(selectedField.maxRating || 5);
+      setLocalAcceptedTypes(selectedField.acceptedTypes || '');
     } else {
       setLocalLabel('');
       setLocalPlaceholder('');
       setLocalRequired(false);
       setLocalHelpText('');
+      setLocalOptions([]);
+      setLocalMin('');
+      setLocalMax('');
+      setLocalMaxRating(5);
+      setLocalAcceptedTypes('');
     }
   }, [selectedField]);
 
@@ -52,6 +67,32 @@ const handleRequiredChange = (value) => {
   const handleHelpTextChange = (value) => {
     setLocalHelpText(value);
     updateField({ helpText: value });
+  };
+
+  const handleOptionsChange = (value) => {
+    const options = value.split('\n').filter(opt => opt.trim());
+    setLocalOptions(options);
+    updateField({ options });
+  };
+
+  const handleMinChange = (value) => {
+    setLocalMin(value);
+    updateField({ min: value ? parseFloat(value) : undefined });
+  };
+
+  const handleMaxChange = (value) => {
+    setLocalMax(value);
+    updateField({ max: value ? parseFloat(value) : undefined });
+  };
+
+  const handleMaxRatingChange = (value) => {
+    setLocalMaxRating(value);
+    updateField({ maxRating: parseInt(value) });
+  };
+
+  const handleAcceptedTypesChange = (value) => {
+    setLocalAcceptedTypes(value);
+    updateField({ acceptedTypes: value });
   };
 
   const deleteField = () => {
@@ -115,18 +156,19 @@ const handleRequiredChange = (value) => {
               </label>
               <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
                 <ApperIcon 
-                  name={
+name={
                     selectedField.type === 'text' ? 'Type' :
                     selectedField.type === 'email' ? 'Mail' :
                     selectedField.type === 'textarea' ? 'FileText' :
                     selectedField.type === 'select' ? 'ChevronDown' :
                     selectedField.type === 'checkbox' ? 'Square' :
+                    selectedField.type === 'phone' ? 'Phone' :
                     selectedField.type === 'radio' ? 'Circle' :
-                    selectedField.type === 'file' ? 'Upload' :
                     selectedField.type === 'number' ? 'Hash' :
                     selectedField.type === 'date' ? 'Calendar' :
-                    selectedField.type === 'time' ? 'Clock' : 'Type'
-                  } 
+                    selectedField.type === 'file' ? 'Upload' :
+                    selectedField.type === 'rating' ? 'Star' : 'Type'
+                  }
                   size={16} 
                   className="text-gray-600" 
                 />
@@ -150,7 +192,7 @@ const handleRequiredChange = (value) => {
             </div>
 
             {/* Placeholder Input */}
-            {['text', 'email', 'textarea', 'number'].includes(selectedField.type) && (
+{['text', 'email', 'textarea', 'number', 'phone'].includes(selectedField.type) && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Placeholder Text
@@ -162,9 +204,94 @@ const handleRequiredChange = (value) => {
                   className="w-full"
                 />
               </div>
-)}
+            )}
 
-            {/* Help Text Input */}
+            {/* Options for Radio and Select */}
+            {['radio', 'select'].includes(selectedField.type) && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Options
+                </label>
+                <textarea
+                  value={localOptions.join('\n')}
+                  onChange={(e) => handleOptionsChange(e.target.value)}
+                  placeholder="Enter each option on a new line"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  rows={4}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter each option on a separate line
+                </p>
+              </div>
+            )}
+
+            {/* Min/Max for Number fields */}
+            {selectedField.type === 'number' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Minimum Value
+                  </label>
+                  <Input
+                    type="number"
+                    value={localMin}
+                    onChange={(e) => handleMinChange(e.target.value)}
+                    placeholder="Min value"
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Maximum Value
+                  </label>
+                  <Input
+                    type="number"
+                    value={localMax}
+                    onChange={(e) => handleMaxChange(e.target.value)}
+                    placeholder="Max value"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Max Rating for Rating fields */}
+            {selectedField.type === 'rating' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Maximum Rating
+                </label>
+                <select
+                  value={localMaxRating}
+                  onChange={(e) => handleMaxRatingChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  {[3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                    <option key={num} value={num}>{num} Stars</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* File Types for File Upload */}
+            {selectedField.type === 'file' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Accepted File Types
+                </label>
+                <Input
+                  value={localAcceptedTypes}
+                  onChange={(e) => handleAcceptedTypesChange(e.target.value)}
+                  placeholder=".pdf,.doc,.docx,.jpg,.png"
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Specify file extensions separated by commas
+                </p>
+              </div>
+            )}
+
+{/* Help Text Input */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Help Text
@@ -179,6 +306,7 @@ const handleRequiredChange = (value) => {
                 Additional guidance or instructions for this field
               </p>
             </div>
+
             {/* Required Toggle */}
             <div>
               <label className="flex items-center space-x-3">

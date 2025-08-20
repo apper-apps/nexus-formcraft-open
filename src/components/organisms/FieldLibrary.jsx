@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import React from "react";
 import ApperIcon from "@/components/ApperIcon";
 
 const FieldLibrary = () => {
@@ -36,7 +37,50 @@ const FieldLibrary = () => {
       label: "Checkbox",
       icon: "Square",
       description: "Single checkbox field",
-      placeholder: "Check this box"
+placeholder: "Check this box"
+    },
+    {
+      type: "phone",
+      label: "Phone Number",
+      icon: "Phone",
+      description: "Phone number input field",
+      placeholder: "Enter phone number..."
+    },
+    {
+      type: "radio",
+      label: "Radio Buttons",
+      icon: "Circle",
+      description: "Single choice from options",
+      options: ["Option 1", "Option 2", "Option 3"]
+    },
+    {
+      type: "number",
+      label: "Number Input",
+      icon: "Hash",
+      description: "Numeric input field",
+      placeholder: "Enter number...",
+      min: 0,
+      max: 100
+    },
+    {
+      type: "date",
+      label: "Date Picker",
+      icon: "Calendar",
+      description: "Date selection field"
+    },
+    {
+      type: "file",
+      label: "File Upload",
+      icon: "Upload",
+      description: "File upload field",
+      acceptedTypes: ".pdf,.doc,.docx,.jpg,.png"
+    },
+    {
+      type: "rating",
+      label: "Rating Field",
+      icon: "Star",
+      description: "Star rating field",
+      maxRating: 5
     }
   ];
 

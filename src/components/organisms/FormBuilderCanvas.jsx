@@ -80,14 +80,18 @@ const handleDrop = (e) => {
       newFields.splice(targetIndex, 0, draggedField);
     } else {
       // Handle new field from library
-      const newField = {
-Id: Date.now(),
+const newField = {
+        Id: Date.now(),
         type: data.type,
         label: data.label,
         placeholder: data.placeholder || "",
         required: false,
         helpText: "",
-        options: data.options || []
+        options: data.options || [],
+        min: data.min || (data.type === "number" ? 0 : undefined),
+        max: data.max || (data.type === "number" ? 100 : undefined),
+        maxRating: data.maxRating || (data.type === "rating" ? 5 : undefined),
+        acceptedTypes: data.acceptedTypes || (data.type === "file" ? ".pdf,.doc,.docx,.jpg,.png" : undefined)
       };
       
       newFields.splice(insertIndex, 0, newField);
@@ -237,12 +241,18 @@ Id: Date.now(),
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center gap-2">
-                        <ApperIcon 
+<ApperIcon 
                           name={field.type === "text" ? "Type" : 
                                 field.type === "email" ? "Mail" :
                                 field.type === "textarea" ? "FileText" :
                                 field.type === "select" ? "ChevronDown" :
-                                field.type === "checkbox" ? "Square" : "Type"}
+                                field.type === "checkbox" ? "Square" :
+                                field.type === "phone" ? "Phone" :
+                                field.type === "radio" ? "Circle" :
+                                field.type === "number" ? "Hash" :
+                                field.type === "date" ? "Calendar" :
+                                field.type === "file" ? "Upload" :
+                                field.type === "rating" ? "Star" : "Type"}
                           className="w-4 h-4 text-gray-400"
                         />
 <div 
