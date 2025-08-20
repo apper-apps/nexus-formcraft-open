@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import FieldLibrary from "@/components/organisms/FieldLibrary";
 import FormBuilderCanvas from "@/components/organisms/FormBuilderCanvas";
-import FormPreview from "@/components/organisms/FormPreview";
+import FieldPropertiesPanel from "@/components/organisms/FieldPropertiesPanel";
 import SaveFormModal from "@/components/molecules/SaveFormModal";
 import Loading from "@/components/ui/Loading";
 import Error from "@/components/ui/Error";
@@ -12,13 +12,13 @@ import { formService } from "@/services/api/formService";
 const FormBuilder = () => {
   const navigate = useNavigate();
   const { formId } = useParams();
-  const [formName, setFormName] = useState("");
+const [formName, setFormName] = useState("");
   const [fields, setFields] = useState([]);
+  const [selectedFieldId, setSelectedFieldId] = useState(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-
   useEffect(() => {
     if (formId) {
       loadForm();
@@ -73,7 +73,7 @@ const FormBuilder = () => {
   if (loading) return <Loading type="builder" />;
   if (error) return <Error message={error} onRetry={loadForm} />;
 
-  return (
+return (
     <div className="h-full flex bg-surface">
       <FieldLibrary />
       <FormBuilderCanvas
@@ -81,8 +81,15 @@ const FormBuilder = () => {
         onFieldsChange={setFields}
         onSave={handleSave}
         formName={formName}
+        selectedFieldId={selectedFieldId}
+        onFieldSelect={setSelectedFieldId}
       />
-      <FormPreview fields={fields} formName={formName} />
+      <FieldPropertiesPanel
+        selectedFieldId={selectedFieldId}
+        fields={fields}
+        onFieldsChange={setFields}
+        onFieldSelect={setSelectedFieldId}
+      />
       
       <SaveFormModal
         isOpen={showSaveModal}

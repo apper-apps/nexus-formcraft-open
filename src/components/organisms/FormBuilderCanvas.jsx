@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
 
-const FormBuilderCanvas = ({ fields, onFieldsChange, onSave, formName }) => {
+const FormBuilderCanvas = ({ fields, onFieldsChange, onSave, formName, selectedFieldId, onFieldSelect }) => {
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const canvasRef = useRef(null);
 
@@ -106,13 +106,18 @@ const FormBuilderCanvas = ({ fields, onFieldsChange, onSave, formName }) => {
           ) : (
             <div className="space-y-4">
               {fields.map((field, index) => (
-                <motion.div
+<motion.div
                   key={field.Id}
                   layout
-                  className="group relative p-4 border border-gray-200 rounded-lg hover:border-primary-300 transition-all duration-200"
+                  className={`group relative p-4 border rounded-lg hover:border-primary-300 transition-all duration-200 cursor-pointer ${
+                    selectedFieldId === field.Id 
+                      ? 'border-primary-500 bg-primary-50 shadow-md' 
+                      : 'border-gray-200'
+                  }`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
+                  onClick={() => onFieldSelect(field.Id)}
                 >
                   {dragOverIndex === index && (
                     <div className="absolute -top-1 left-0 right-0 h-0.5 bg-primary-500 rounded-full" />
@@ -129,13 +134,12 @@ const FormBuilderCanvas = ({ fields, onFieldsChange, onSave, formName }) => {
                                 field.type === "checkbox" ? "Square" : "Type"}
                           className="w-4 h-4 text-gray-400"
                         />
-                        <input
-                          type="text"
-                          value={field.label}
-                          onChange={(e) => updateField(field.Id, { label: e.target.value })}
-                          className="font-medium text-gray-900 bg-transparent border-none outline-none p-0 focus:bg-gray-50 rounded px-2 py-1"
-                          placeholder="Field label"
-                        />
+<div 
+                          className="font-medium text-gray-900 cursor-pointer hover:bg-gray-50 rounded px-2 py-1"
+                          onClick={() => onFieldSelect(field.Id)}
+                        >
+                          {field.label || 'Click to edit label'}
+                        </div>
                         <label className="flex items-center gap-1 text-sm text-gray-500">
                           <input
                             type="checkbox"
@@ -147,13 +151,12 @@ const FormBuilderCanvas = ({ fields, onFieldsChange, onSave, formName }) => {
                         </label>
                       </div>
                       
-                      <input
-                        type="text"
-                        value={field.placeholder}
-                        onChange={(e) => updateField(field.Id, { placeholder: e.target.value })}
-                        className="w-full text-sm text-gray-500 bg-transparent border-none outline-none p-0 focus:bg-gray-50 rounded px-2 py-1"
-                        placeholder="Placeholder text"
-                      />
+<div 
+                        className="w-full text-sm text-gray-500 cursor-pointer hover:bg-gray-50 rounded px-2 py-1"
+                        onClick={() => onFieldSelect(field.Id)}
+                      >
+                        {field.placeholder || 'Click to edit placeholder'}
+                      </div>
 
                       {field.type === "select" && (
                         <div className="space-y-2">
