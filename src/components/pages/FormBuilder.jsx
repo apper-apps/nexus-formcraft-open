@@ -19,6 +19,12 @@ const [formName, setFormName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  
+  // History management for undo/redo
+  const [history, setHistory] = useState([{ formName: "", fields: [] }]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   useEffect(() => {
     if (formId) {
       loadForm();
@@ -31,13 +37,100 @@ const [formName, setFormName] = useState("");
       setLoading(true);
       const form = await formService.getById(parseInt(formId));
       setFormName(form.name);
-      setFields(form.fields || []);
+setFields(form.fields || []);
       setIsEditing(true);
-    } catch (err) {
-      setError("Failed to load form. Please try again.");
-    } finally {
-      setLoading(false);
+      
+      // Initialize history with loaded form
+      const initialState = { formName: form.name || "", fields: form.fields || [] };
+      setHistory([initialState]);
+      setHistoryIndex(0);
+      setCanUndo(false);
+      setCanRedo(false);
+    } catch (error) {
+      setError("Failed to load form");
+      toast.error("Failed to load form");
     }
+    setLoading(false);
+  };
+
+  // Save current state to history
+  const saveToHistory = (newFormName, newFields) => {
+    const newState = { formName: newFormName, fields: JSON.parse(JSON.stringify(newFields)) };
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newState);
+    
+    // Limit history size to prevent memory issues
+    if (newHistory.length > 50) {
+      newHistory.shift();
+    } else {
+      setHistoryIndex(historyIndex + 1);
+    }
+    
+    setHistory(newHistory);
+    setCanUndo(true);
+    setCanRedo(false);
+  };
+
+  // Undo function
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      const prevState = history[newIndex];
+      
+      setFormName(prevState.formName);
+      setFields(prevState.fields);
+      setHistoryIndex(newIndex);
+      setCanUndo(newIndex > 0);
+      setCanRedo(true);
+      
+      toast.success("Undo successful");
+    }
+  };
+
+  // Redo function
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      const nextState = history[newIndex];
+      
+      setFormName(nextState.formName);
+      setFields(nextState.fields);
+      setHistoryIndex(newIndex);
+      setCanUndo(true);
+      setCanRedo(newIndex < history.length - 1);
+      
+      toast.success("Redo successful");
+    }
+  };
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.ctrlKey || event.metaKey) {
+        if (event.key === 'z' && !event.shiftKey) {
+          event.preventDefault();
+          handleUndo();
+        } else if ((event.key === 'y') || (event.key === 'z' && event.shiftKey)) {
+          event.preventDefault();
+          handleRedo();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [historyIndex, history]);
+
+  // Enhanced field change handler with history tracking
+  const handleFieldsChange = (newFields) => {
+    setFields(newFields);
+    saveToHistory(formName, newFields);
+  };
+
+  // Enhanced form name change handler with history tracking
+  const handleFormNameChange = (newName) => {
+    setFormName(newName);
+    saveToHistory(newName, fields);
   };
 
   const handleSave = () => {
@@ -78,16 +171,21 @@ return (
       <FieldLibrary />
       <FormBuilderCanvas
         fields={fields}
-        onFieldsChange={setFields}
+onFieldsChange={handleFieldsChange}
         onSave={handleSave}
         formName={formName}
+        onFormNameChange={handleFormNameChange}
         selectedFieldId={selectedFieldId}
         onFieldSelect={setSelectedFieldId}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
       />
       <FieldPropertiesPanel
         selectedFieldId={selectedFieldId}
         fields={fields}
-        onFieldsChange={setFields}
+onFieldsChange={handleFieldsChange}
         onFieldSelect={setSelectedFieldId}
       />
       

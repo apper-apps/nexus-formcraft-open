@@ -3,7 +3,19 @@ import { motion } from "framer-motion";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
 
-const FormBuilderCanvas = ({ fields, onFieldsChange, onSave, formName, selectedFieldId, onFieldSelect }) => {
+const FormBuilderCanvas = ({ 
+  fields, 
+  onFieldsChange, 
+  onSave, 
+  formName, 
+  onFormNameChange,
+  selectedFieldId, 
+  onFieldSelect,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo
+}) => {
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const canvasRef = useRef(null);
 
@@ -77,15 +89,45 @@ const FormBuilderCanvas = ({ fields, onFieldsChange, onSave, formName, selectedF
 
   return (
     <div className="flex-1 bg-surface/50 p-6">
-      <div className="max-w-2xl mx-auto">
+<div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-display font-bold text-gray-900">
-            {formName || "Untitled Form"}
-          </h2>
-          <Button onClick={onSave} className="inline-flex items-center gap-2">
-            <ApperIcon name="Save" className="w-4 h-4" />
-            Save Form
-          </Button>
+          <input
+            type="text"
+            value={formName}
+            onChange={(e) => onFormNameChange(e.target.value)}
+            placeholder="Untitled Form"
+            className="text-2xl font-display font-bold text-gray-900 bg-transparent border-none outline-none focus:bg-white focus:border focus:border-primary-300 rounded-lg px-3 py-1 transition-all duration-200"
+          />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1">
+              <Button
+                onClick={onUndo}
+                disabled={!canUndo}
+                variant="ghost"
+                size="sm"
+                className="inline-flex items-center gap-1 px-2 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Undo (Ctrl+Z)"
+              >
+                <ApperIcon name="Undo2" className="w-4 h-4" />
+                Undo
+              </Button>
+              <Button
+                onClick={onRedo}
+                disabled={!canRedo}
+                variant="ghost"
+                size="sm"
+                className="inline-flex items-center gap-1 px-2 py-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Redo (Ctrl+Y)"
+              >
+                <ApperIcon name="Redo2" className="w-4 h-4" />
+                Redo
+              </Button>
+            </div>
+            <Button onClick={onSave} className="inline-flex items-center gap-2">
+              <ApperIcon name="Save" className="w-4 h-4" />
+              Save Form
+            </Button>
+          </div>
         </div>
 
         <div
