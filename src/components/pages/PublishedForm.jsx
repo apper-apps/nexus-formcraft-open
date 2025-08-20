@@ -282,7 +282,21 @@ const errorClasses = hasError
   if (loading) return <Loading />;
   if (error) return <Error message={error} onRetry={loadForm} />;
 
-  if (submitted) {
+if (submitted) {
+    const thankYouSettings = form.thankYou || {
+      useCustom: false,
+      message: "Thank you for your submission!",
+      redirectUrl: "",
+      showCreateFormButton: true
+    };
+
+    // Handle redirect if URL is provided
+    if (thankYouSettings.useCustom && thankYouSettings.redirectUrl) {
+      setTimeout(() => {
+        window.location.href = thankYouSettings.redirectUrl;
+      }, 2000);
+    }
+
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center p-4">
         <motion.div
@@ -294,14 +308,26 @@ const errorClasses = hasError
             <ApperIcon name="CheckCircle" className="w-8 h-8 text-success" />
           </div>
           <h2 className="text-2xl font-display font-bold text-gray-900 mb-2">
-            Thank you!
+            {thankYouSettings.useCustom ? "Thank you!" : "Thank you!"}
           </h2>
           <p className="text-gray-600 mb-6">
-            Your form has been submitted successfully.
+            {thankYouSettings.useCustom ? thankYouSettings.message : "Your form has been submitted successfully."}
           </p>
-          <Button onClick={() => navigate("/")} variant="secondary">
-            Create Your Own Form
-          </Button>
+          
+          {thankYouSettings.useCustom && thankYouSettings.redirectUrl && (
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800 flex items-center justify-center gap-2">
+                <ApperIcon name="Clock" size={16} />
+                Redirecting you in 2 seconds...
+              </p>
+            </div>
+          )}
+          
+          {(!thankYouSettings.useCustom || thankYouSettings.showCreateFormButton) && (
+            <Button onClick={() => navigate("/")} variant="secondary">
+              Create Your Own Form
+            </Button>
+          )}
         </motion.div>
       </div>
     );

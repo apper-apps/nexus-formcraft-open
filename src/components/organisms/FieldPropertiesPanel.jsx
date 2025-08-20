@@ -4,7 +4,7 @@ import ApperIcon from '@/components/ApperIcon';
 import Button from '@/components/atoms/Button';
 import Input from '@/components/atoms/Input';
 
-const FieldPropertiesPanel = ({ selectedFieldId, fields, onFieldsChange, onFieldSelect }) => {
+const FieldPropertiesPanel = ({ selectedFieldId, fields, onFieldsChange, onFieldSelect, notificationSettings, onNotificationSettingsChange, thankYouSettings, onThankYouSettingsChange, formSteps, currentStep, onStepChange }) => {
 const [localLabel, setLocalLabel] = useState('');
   const [localPlaceholder, setLocalPlaceholder] = useState('');
   const [localRequired, setLocalRequired] = useState(false);
@@ -155,13 +155,15 @@ const getFieldOptions = (fieldId) => {
     return [];
   };
 
+const [activeTab, setActiveTab] = useState(selectedFieldId ? 'field' : 'settings');
+
   return (
     <div className="w-80 bg-white border-l border-gray-200 flex flex-col h-full">
-      {/* Header */}
+      {/* Header with Tabs */}
       <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 font-display">
-            Field Properties
+            Properties
           </h3>
           {selectedFieldId && (
             <Button
@@ -174,16 +176,48 @@ const getFieldOptions = (fieldId) => {
             </Button>
           )}
         </div>
-        {selectedField && (
-          <p className="text-sm text-gray-500 mt-1">
+        
+        {/* Tab Navigation */}
+        <div className="flex bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setActiveTab('field')}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'field'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <ApperIcon name="Settings" size={14} />
+              Field
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'settings'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <ApperIcon name="Sliders" size={14} />
+              Form
+            </div>
+          </button>
+        </div>
+        
+        {selectedField && activeTab === 'field' && (
+          <p className="text-sm text-gray-500 mt-2">
             Editing {selectedField.type} field
           </p>
         )}
       </div>
 
-      {/* Content */}
+{/* Content */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {selectedField ? (
+        {activeTab === 'field' ? (
+          selectedField ? (
           <div className="p-6 space-y-6">
             {/* Field Type Display */}
             <div>
@@ -514,22 +548,192 @@ name={
                 Delete Field
               </Button>
             </div>
-          </div>
-        ) : (
-          <div className="p-6 text-center">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                <ApperIcon name="Settings" size={24} className="text-gray-400" />
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-1">
-                  No Field Selected
-                </h4>
-                <p className="text-sm text-gray-500">
-                  Click on a field in the canvas to edit its properties
-                </p>
+</div>
+          ) : (
+            <div className="p-6 text-center">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                  <ApperIcon name="Settings" size={24} className="text-gray-400" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-1">
+                    No Field Selected
+                  </h4>
+                  <p className="text-sm text-gray-500">
+                    Click on a field in the canvas to edit its properties
+                  </p>
+                </div>
               </div>
             </div>
+          )
+        ) : (
+          // Form Settings Tab
+          <div className="p-6 space-y-8">
+            {/* Thank You Page Settings */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center gap-2">
+                <ApperIcon name="Heart" size={16} />
+                Thank You Page
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="useCustomThankYou"
+                    checked={thankYouSettings?.useCustom || false}
+                    onChange={(e) => onThankYouSettingsChange?.({
+                      ...thankYouSettings,
+                      useCustom: e.target.checked
+                    })}
+                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <label htmlFor="useCustomThankYou" className="text-sm text-gray-700">
+                    Customize thank you page
+                  </label>
+                </div>
+
+                {thankYouSettings?.useCustom && (
+                  <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+                    {/* Custom Message */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Thank You Message
+                      </label>
+                      <textarea
+                        value={thankYouSettings?.message || "Thank you for your submission!"}
+                        onChange={(e) => onThankYouSettingsChange?.({
+                          ...thankYouSettings,
+                          message: e.target.value
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        rows={3}
+                        placeholder="Enter your custom thank you message"
+                      />
+                    </div>
+
+                    {/* Redirect URL */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Redirect URL (Optional)
+                      </label>
+                      <Input
+                        value={thankYouSettings?.redirectUrl || ""}
+                        onChange={(e) => onThankYouSettingsChange?.({
+                          ...thankYouSettings,
+                          redirectUrl: e.target.value
+                        })}
+                        placeholder="https://example.com/success"
+                        className="w-full"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Users will be redirected here after 2 seconds
+                      </p>
+                    </div>
+
+                    {/* Show Create Form Button */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="showCreateFormButton"
+                        checked={thankYouSettings?.showCreateFormButton !== false}
+                        onChange={(e) => onThankYouSettingsChange?.({
+                          ...thankYouSettings,
+                          showCreateFormButton: e.target.checked
+                        })}
+                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      />
+                      <label htmlFor="showCreateFormButton" className="text-sm text-gray-700">
+                        Show "Create Your Own Form" button
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* Preview */}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Preview
+                  </label>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
+                    <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <ApperIcon name="CheckCircle" className="w-6 h-6 text-success" />
+                    </div>
+                    <h4 className="text-lg font-display font-bold text-gray-900 mb-2">
+                      Thank you!
+                    </h4>
+                    <p className="text-gray-600 mb-4 text-sm">
+                      {thankYouSettings?.useCustom 
+                        ? (thankYouSettings.message || "Thank you for your submission!")
+                        : "Your form has been submitted successfully."
+                      }
+                    </p>
+                    
+                    {thankYouSettings?.useCustom && thankYouSettings.redirectUrl && (
+                      <div className="mb-3 p-2 bg-blue-50 rounded text-xs text-blue-800 flex items-center justify-center gap-1">
+                        <ApperIcon name="Clock" size={12} />
+                        Redirecting in 2 seconds...
+                      </div>
+                    )}
+                    
+                    {(!thankYouSettings?.useCustom || thankYouSettings?.showCreateFormButton !== false) && (
+                      <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm">
+                        Create Your Own Form
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Notifications Settings */}
+            {notificationSettings && onNotificationSettingsChange && (
+              <div className="border-t pt-6">
+                <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center gap-2">
+                  <ApperIcon name="Bell" size={16} />
+                  Email Notifications
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="enableNotifications"
+                      checked={notificationSettings?.enabled || false}
+                      onChange={(e) => onNotificationSettingsChange?.({
+                        ...notificationSettings,
+                        enabled: e.target.checked
+                      })}
+                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <label htmlFor="enableNotifications" className="text-sm text-gray-700">
+                      Send email notifications
+                    </label>
+                  </div>
+
+                  {notificationSettings?.enabled && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Recipients
+                      </label>
+                      <textarea
+                        value={(notificationSettings?.recipients || []).join('\n')}
+                        onChange={(e) => onNotificationSettingsChange?.({
+                          ...notificationSettings,
+                          recipients: e.target.value.split('\n').filter(email => email.trim())
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        rows={3}
+                        placeholder="Enter email addresses, one per line"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        These recipients will be notified when someone submits the form
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -32,7 +32,12 @@ const [isEditing, setIsEditing] = useState(false);
     enabled: false,
     recipients: []
   });
-  
+const [thankYouSettings, setThankYouSettings] = useState({
+    useCustom: false,
+    message: "Thank you for your submission!",
+    redirectUrl: "",
+    showCreateFormButton: true
+  });
   // History management for undo/redo
   const [history, setHistory] = useState([{ formName: "", fields: [] }]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -104,9 +109,15 @@ setFormStyle(form.style || {
         formWidth: 'medium'
       });
       
-      setNotificationSettings(form.notifications || {
+setNotificationSettings(form.notifications || {
         enabled: false,
         recipients: []
+      });
+      setThankYouSettings(form.thankYou || {
+        useCustom: false,
+        message: "Thank you for your submission!",
+        redirectUrl: "",
+        showCreateFormButton: true
       });
       
       setCurrentForm(form);
@@ -129,7 +140,8 @@ const saveToHistory = (newFormName, newFields) => {
     const newState = { 
       formName: newFormName, 
       fields: JSON.parse(JSON.stringify(newFields)),
-      notifications: JSON.parse(JSON.stringify(notificationSettings))
+      notifications: JSON.parse(JSON.stringify(notificationSettings)),
+      thankYou: JSON.parse(JSON.stringify(thankYouSettings))
     };
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newState);
@@ -154,7 +166,8 @@ const prevState = history[newIndex];
       
       setFormName(prevState.formName);
       setFields(prevState.fields);
-      setNotificationSettings(prevState.notifications || { enabled: false, recipients: [] });
+setNotificationSettings(prevState.notifications || { enabled: false, recipients: [] });
+      setThankYouSettings(prevState.thankYou || { useCustom: false, message: "Thank you for your submission!", redirectUrl: "", showCreateFormButton: true });
       setHistoryIndex(newIndex);
       setCanUndo(newIndex > 0);
       setCanRedo(true);
@@ -171,7 +184,8 @@ const prevState = history[newIndex];
       
 setFormName(nextState.formName);
       setFields(nextState.fields);
-      setNotificationSettings(nextState.notifications || { enabled: false, recipients: [] });
+setNotificationSettings(nextState.notifications || { enabled: false, recipients: [] });
+      setThankYouSettings(nextState.thankYou || { useCustom: false, message: "Thank you for your submission!", redirectUrl: "", showCreateFormButton: true });
       setHistoryIndex(newIndex);
       setCanUndo(true);
       setCanRedo(newIndex < history.length - 1);
@@ -235,6 +249,11 @@ const handleFormNameChange = (newName) => {
   const handleNotificationSettingsChange = (newSettings) => {
     setNotificationSettings(newSettings);
     saveToHistory(formName, fields);
+};
+
+  const handleThankYouSettingsChange = (newSettings) => {
+    setThankYouSettings(newSettings);
+    saveToHistory(formName, fields);
   };
 
 // Enhanced style change handler with history tracking
@@ -256,8 +275,9 @@ const handleFormNameChange = (newName) => {
 const formData = {
         name,
         fields,
-        style: formStyle,
+style: formStyle,
         notifications: notificationSettings,
+        thankYou: thankYouSettings,
         createdAt: isEditing ? undefined : new Date().toISOString()
       };
 
@@ -329,8 +349,10 @@ return (
         onShowPublishModal={() => setShowPublishModal(true)}
         formStyle={formStyle}
         onStyleChange={handleStyleChange}
-        notificationSettings={notificationSettings}
+notificationSettings={notificationSettings}
         onNotificationSettingsChange={handleNotificationSettingsChange}
+        thankYouSettings={thankYouSettings}
+        onThankYouSettingsChange={handleThankYouSettingsChange}
         formSteps={getFormSteps()}
         currentStep={currentStep}
         onStepChange={setCurrentStep}
