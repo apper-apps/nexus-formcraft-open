@@ -8,6 +8,10 @@ const getNextId = () => {
   return forms.length > 0 ? Math.max(...forms.map(f => f.Id)) + 1 : 1;
 };
 
+const generatePublishId = () => {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
 const delay = () => new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 200));
 
 export const formService = {
@@ -30,7 +34,8 @@ export const formService = {
       },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      isPublished: false,
+isPublished: false,
+      publishUrl: null,
       submissionCount: 0
     };
     
@@ -47,25 +52,68 @@ export const formService = {
     return { ...form };
   },
 
-  async create(formData) {
+async create(formData) {
     await delay();
     const newForm = {
       Id: Math.max(...forms.map(f => f.Id), 0) + 1,
       ...formData,
+      isPublished: false,
+      publishUrl: null,
       createdAt: formData.createdAt || new Date().toISOString()
     };
     forms.unshift(newForm);
     return { ...newForm };
   },
 
-  async update(id, formData) {
+async update(id, formData) {
+    await delay();
+    const index = forms.findIndex(f => f.Id === id);
+    if (index === -1) {
+throw new Error("Form not found");
+    }
+    forms[index] = { ...forms[index], ...formData };
+    return { ...forms[index] };
+  },
+
+  async publish(id) {
     await delay();
     const index = forms.findIndex(f => f.Id === id);
     if (index === -1) {
       throw new Error("Form not found");
     }
-    forms[index] = { ...forms[index], ...formData };
+    const publishId = generatePublishId();
+    const publishUrl = `${window.location.origin}/form/${publishId}`;
+    forms[index] = { 
+      ...forms[index], 
+      isPublished: true, 
+      publishUrl,
+      publishId 
+    };
     return { ...forms[index] };
+  },
+
+  async unpublish(id) {
+    await delay();
+    const index = forms.findIndex(f => f.Id === id);
+    if (index === -1) {
+      throw new Error("Form not found");
+    }
+    forms[index] = { 
+      ...forms[index], 
+      isPublished: false, 
+      publishUrl: null,
+      publishId: null 
+    };
+    return { ...forms[index] };
+  },
+
+  async getByPublishId(publishId) {
+    await delay();
+    const form = forms.find(f => f.publishId === publishId && f.isPublished);
+    if (!form) {
+      throw new Error("Published form not found");
+    }
+    return { ...form };
   },
 
   async delete(id) {

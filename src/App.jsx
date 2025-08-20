@@ -3,7 +3,7 @@ import { ToastContainer } from "react-toastify";
 import Layout from "@/components/organisms/Layout";
 import Dashboard from "@/components/pages/Dashboard";
 import FormBuilder from "@/components/pages/FormBuilder";
-
+import PublishedForm from '@/components/pages/PublishedForm'
 function App() {
   return (
     <BrowserRouter>
@@ -15,7 +15,7 @@ function App() {
             <Route path="builder/:formId" element={<FormBuilder />} />
           </Route>
         </Routes>
-        
+<Route path="form/:publishId" element={<PublishedForm />} />
         <ToastContainer
           position="top-right"
           autoClose={3000}

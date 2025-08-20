@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import PublishFormModal from "@/components/molecules/PublishFormModal";
+import { formService } from "@/services/api/formService";
+import Error from "@/components/ui/Error";
+import Loading from "@/components/ui/Loading";
+import SaveFormModal from "@/components/molecules/SaveFormModal";
+import FieldPropertiesPanel from "@/components/organisms/FieldPropertiesPanel";
 import FieldLibrary from "@/components/organisms/FieldLibrary";
 import FormBuilderCanvas from "@/components/organisms/FormBuilderCanvas";
-import FieldPropertiesPanel from "@/components/organisms/FieldPropertiesPanel";
-import SaveFormModal from "@/components/molecules/SaveFormModal";
-import Loading from "@/components/ui/Loading";
-import Error from "@/components/ui/Error";
-import { formService } from "@/services/api/formService";
 
 const FormBuilder = () => {
   const navigate = useNavigate();
@@ -15,11 +16,12 @@ const FormBuilder = () => {
 const [formName, setFormName] = useState("");
   const [fields, setFields] = useState([]);
   const [selectedFieldId, setSelectedFieldId] = useState(null);
-  const [showSaveModal, setShowSaveModal] = useState(false);
+const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [currentForm, setCurrentForm] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  
   // History management for undo/redo
   const [history, setHistory] = useState([{ formName: "", fields: [] }]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -35,11 +37,11 @@ const [formName, setFormName] = useState("");
     try {
       setError("");
       setLoading(true);
-      const form = await formService.getById(parseInt(formId));
+const form = await formService.getById(parseInt(formId));
       setFormName(form.name);
-setFields(form.fields || []);
+      setFields(form.fields || []);
+      setCurrentForm(form);
       setIsEditing(true);
-      
       // Initialize history with loaded form
       const initialState = { formName: form.name || "", fields: form.fields || [] };
       setHistory([initialState]);
@@ -149,17 +151,47 @@ setFields(form.fields || []);
         createdAt: isEditing ? undefined : new Date().toISOString()
       };
 
-      if (isEditing) {
-        await formService.update(parseInt(formId), formData);
+if (isEditing) {
+        const updatedForm = await formService.update(parseInt(formId), formData);
+        setCurrentForm(updatedForm);
         toast.success("Form updated successfully!");
       } else {
-        await formService.create(formData);
+        const newForm = await formService.create(formData);
+        setCurrentForm(newForm);
         toast.success("Form saved successfully!");
       }
 
       navigate("/");
     } catch (err) {
       toast.error("Failed to save form. Please try again.");
+    }
+};
+
+  const handlePublish = async () => {
+    if (!currentForm) {
+      toast.error("Please save the form first");
+      return;
+    }
+    
+    try {
+      const publishedForm = await formService.publish(currentForm.Id);
+      setCurrentForm(publishedForm);
+      setShowPublishModal(true);
+      toast.success("Form published successfully!");
+    } catch (err) {
+      toast.error("Failed to publish form. Please try again.");
+    }
+  };
+
+  const handleUnpublish = async () => {
+    if (!currentForm) return;
+    
+    try {
+      const unpublishedForm = await formService.unpublish(currentForm.Id);
+      setCurrentForm(unpublishedForm);
+      toast.success("Form unpublished successfully!");
+    } catch (err) {
+      toast.error("Failed to unpublish form. Please try again.");
     }
   };
 
@@ -169,9 +201,9 @@ setFields(form.fields || []);
 return (
     <div className="h-full flex bg-surface">
       <FieldLibrary />
-      <FormBuilderCanvas
+<FormBuilderCanvas
         fields={fields}
-onFieldsChange={handleFieldsChange}
+        onFieldsChange={handleFieldsChange}
         onSave={handleSave}
         formName={formName}
         onFormNameChange={handleFormNameChange}
@@ -181,11 +213,16 @@ onFieldsChange={handleFieldsChange}
         canRedo={canRedo}
         onUndo={handleUndo}
         onRedo={handleRedo}
+        currentForm={currentForm}
+        onPublish={handlePublish}
+        onUnpublish={handleUnpublish}
+        onShowPublishModal={() => setShowPublishModal(true)}
       />
+      
       <FieldPropertiesPanel
         selectedFieldId={selectedFieldId}
         fields={fields}
-onFieldsChange={handleFieldsChange}
+        onFieldsChange={handleFieldsChange}
         onFieldSelect={setSelectedFieldId}
       />
       
@@ -194,6 +231,13 @@ onFieldsChange={handleFieldsChange}
         onClose={() => setShowSaveModal(false)}
         onSave={handleSaveForm}
         currentName={formName}
+/>
+      
+      <PublishFormModal
+        isOpen={showPublishModal}
+        onClose={() => setShowPublishModal(false)}
+        form={currentForm}
+        onUnpublish={handleUnpublish}
       />
     </div>
   );

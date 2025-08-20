@@ -14,7 +14,11 @@ const FormBuilderCanvas = ({
   canUndo,
   canRedo,
   onUndo,
-  onRedo
+  onRedo,
+  currentForm,
+  onPublish,
+  onUnpublish,
+  onShowPublishModal
 }) => {
   const [dragOverIndex, setDragOverIndex] = useState(null);
 const canvasRef = useRef(null);
@@ -180,10 +184,45 @@ const newField = {
                 Redo
               </Button>
             </div>
-            <Button onClick={onSave} className="inline-flex items-center gap-2">
-              <ApperIcon name="Save" className="w-4 h-4" />
-              Save Form
-            </Button>
+<div className="flex items-center gap-2">
+              <Button onClick={onSave} className="inline-flex items-center gap-2">
+                <ApperIcon name="Save" className="w-4 h-4" />
+                Save Form
+              </Button>
+              {currentForm && (
+                <>
+                  {currentForm.isPublished ? (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={onShowPublishModal}
+                        variant="secondary"
+                        className="inline-flex items-center gap-2"
+                      >
+                        <ApperIcon name="Globe" className="w-4 h-4" />
+                        View Link
+                      </Button>
+                      <Button
+                        onClick={onUnpublish}
+                        variant="secondary"
+                        className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700"
+                      >
+                        <ApperIcon name="EyeOff" className="w-4 h-4" />
+                        Unpublish
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={onPublish}
+                      variant="secondary"
+                      className="inline-flex items-center gap-2 text-green-600 hover:text-green-700"
+                    >
+                      <ApperIcon name="Globe" className="w-4 h-4" />
+                      Publish Form
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
