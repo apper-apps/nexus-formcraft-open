@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
 import FormCard from "@/components/organisms/FormCard";
+import FormTemplatesModal from "@/components/organisms/FormTemplatesModal";
 import Loading from "@/components/ui/Loading";
 import Error from "@/components/ui/Error";
 import Empty from "@/components/ui/Empty";
@@ -12,10 +13,10 @@ import { formService } from "@/services/api/formService";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [forms, setForms] = useState([]);
+const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   useEffect(() => {
     loadForms();
   }, []);
@@ -33,8 +34,16 @@ const Dashboard = () => {
     }
   };
 
-  const handleCreateNew = () => {
+const handleCreateNew = () => {
     navigate("/builder");
+  };
+
+  const handleShowTemplates = () => {
+    setShowTemplatesModal(true);
+  };
+
+  const handleCloseTemplatesModal = () => {
+    setShowTemplatesModal(false);
   };
 
   const handleEditForm = (form) => {
@@ -104,13 +113,22 @@ const Dashboard = () => {
       </motion.div>
 
       {forms.length === 0 ? (
-        <Empty
+<Empty
           title="No forms created yet"
-          description="Get started by creating your first form with our intuitive drag-and-drop builder"
+          description="Get started by creating your first form with our intuitive drag-and-drop builder or choose from our pre-built templates"
           actionLabel="Create Your First Form"
           onAction={handleCreateNew}
           icon="FormInput"
-        />
+        >
+          <Button
+            variant="secondary"
+            onClick={handleShowTemplates}
+            className="mt-4"
+          >
+            <ApperIcon name="Layout" size={16} className="mr-2" />
+            Browse Templates
+          </Button>
+        </Empty>
       ) : (
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -134,7 +152,13 @@ const Dashboard = () => {
             </motion.div>
           ))}
         </motion.div>
-      )}
+)}
+
+      {/* Templates Modal */}
+      <FormTemplatesModal
+        isOpen={showTemplatesModal}
+        onClose={handleCloseTemplatesModal}
+      />
     </div>
   );
 };

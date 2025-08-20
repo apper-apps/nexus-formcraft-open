@@ -3,12 +3,39 @@ import { formsData } from "@/services/mockData/forms.json";
 // Create a copy to prevent direct mutation of imported data
 let forms = [...formsData];
 
+// Function to generate next available ID
+const getNextId = () => {
+  return forms.length > 0 ? Math.max(...forms.map(f => f.Id)) + 1 : 1;
+};
+
 const delay = () => new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 200));
 
 export const formService = {
   async getAll() {
     await delay();
     return forms.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  },
+
+  async create(formData) {
+    await delay();
+    const newForm = {
+      Id: getNextId(),
+      name: formData.name || "Untitled Form",
+      description: formData.description || "",
+      fields: formData.fields || [],
+      settings: formData.settings || {
+        submitButtonText: "Submit",
+        successMessage: "Thank you for your submission!",
+        allowMultipleSubmissions: true
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isPublished: false,
+      submissionCount: 0
+    };
+    
+    forms.push(newForm);
+    return { ...newForm };
   },
 
   async getById(id) {
