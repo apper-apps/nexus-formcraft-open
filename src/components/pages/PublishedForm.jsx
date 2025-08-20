@@ -14,10 +14,10 @@ const PublishedForm = () => {
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({});
+const [formData, setFormData] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-
   useEffect(() => {
     loadForm();
   }, [publishId]);
@@ -42,23 +42,69 @@ const PublishedForm = () => {
     }
   };
 
-  const handleFieldChange = (fieldId, value) => {
+const handleFieldChange = (fieldId, value) => {
     setFormData(prev => ({
       ...prev,
       [fieldId]: value
     }));
+    
+    // Clear field error when user starts typing
+    if (fieldErrors[fieldId]) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [fieldId]: null
+      }));
+    }
   };
 
-  const validateForm = () => {
+const validateForm = () => {
     const errors = [];
+    const newFieldErrors = {};
+    
     form.fields.forEach(field => {
+      const value = formData[field.Id];
+      let fieldError = null;
+      
+      // Required field validation
       if (field.required) {
-        const value = formData[field.Id];
         if (!value || (typeof value === "string" && !value.trim())) {
-          errors.push(`${field.label} is required`);
+          fieldError = `${field.label} is required`;
+          errors.push(fieldError);
         }
       }
+      
+      // Email format validation
+      if (field.type === "email" && value && typeof value === "string" && value.trim()) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value.trim())) {
+          fieldError = "Please enter a valid email address";
+          errors.push(fieldError);
+        }
+      }
+      
+      // Number format validation
+      if (field.type === "number" && value && typeof value === "string" && value.trim()) {
+        const numValue = parseFloat(value);
+        if (isNaN(numValue)) {
+          fieldError = "Please enter a valid number";
+          errors.push(fieldError);
+        } else {
+          // Check min/max constraints
+          if (field.min !== undefined && numValue < field.min) {
+            fieldError = `Value must be at least ${field.min}`;
+            errors.push(fieldError);
+          }
+          if (field.max !== undefined && numValue > field.max) {
+            fieldError = `Value must be no more than ${field.max}`;
+            errors.push(fieldError);
+          }
+        }
+      }
+      
+      newFieldErrors[field.Id] = fieldError;
     });
+    
+    setFieldErrors(newFieldErrors);
     return errors;
   };
 
@@ -67,7 +113,7 @@ const handleSubmit = async (e) => {
     
     const validationErrors = validateForm();
     if (validationErrors.length > 0) {
-      validationErrors.forEach(error => toast.error(error));
+      toast.error("Please correct the errors below before submitting");
       return;
     }
 
@@ -92,8 +138,13 @@ const handleSubmit = async (e) => {
     }
   };
 
-  const renderField = (field) => {
+const renderField = (field) => {
     const value = formData[field.Id] || "";
+    const hasError = fieldErrors[field.Id];
+    const baseInputClasses = "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all duration-200";
+    const errorClasses = hasError 
+      ? "border-red-300 focus:border-red-500 focus:ring-red-500" 
+      : "border-gray-300 focus:border-primary-500 focus:ring-primary-500";
 
     switch (field.type) {
       case "text":
@@ -106,7 +157,7 @@ const handleSubmit = async (e) => {
             onChange={(e) => handleFieldChange(field.Id, e.target.value)}
             placeholder={field.placeholder}
             required={field.required}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className={`${baseInputClasses} ${errorClasses}`}
           />
         );
 
@@ -118,7 +169,7 @@ const handleSubmit = async (e) => {
             placeholder={field.placeholder}
             required={field.required}
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-vertical"
+            className={`${baseInputClasses} ${errorClasses} resize-vertical`}
           />
         );
 
@@ -128,7 +179,7 @@ const handleSubmit = async (e) => {
             value={value}
             onChange={(e) => handleFieldChange(field.Id, e.target.value)}
             required={field.required}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className={`${baseInputClasses} ${errorClasses}`}
           >
             <option value="">Select an option...</option>
             {field.options.map((option, index) => (
@@ -157,12 +208,18 @@ const handleSubmit = async (e) => {
           <input
             type="number"
             value={value}
-            onChange={(e) => handleFieldChange(field.Id, e.target.value)}
+            onChange={(e) => {
+              // Only allow numeric input
+              const inputValue = e.target.value;
+              if (inputValue === '' || /^-?\d*\.?\d*$/.test(inputValue)) {
+                handleFieldChange(field.Id, inputValue);
+              }
+            }}
             placeholder={field.placeholder}
             min={field.min}
             max={field.max}
             required={field.required}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className={`${baseInputClasses} ${errorClasses}`}
           />
         );
 
@@ -173,7 +230,7 @@ const handleSubmit = async (e) => {
             value={value}
             onChange={(e) => handleFieldChange(field.Id, e.target.value)}
             required={field.required}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className={`${baseInputClasses} ${errorClasses}`}
           />
         );
 
@@ -185,7 +242,7 @@ const handleSubmit = async (e) => {
             onChange={(e) => handleFieldChange(field.Id, e.target.value)}
             placeholder={field.placeholder}
             required={field.required}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className={`${baseInputClasses} ${errorClasses}`}
           />
         );
     }
@@ -237,7 +294,7 @@ const handleSubmit = async (e) => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {form.fields.map(field => (
+{form.fields.map(field => (
               <div key={field.Id} className="space-y-2">
                 {field.type !== "checkbox" && (
                   <label className="block text-sm font-medium text-gray-700">
@@ -246,7 +303,10 @@ const handleSubmit = async (e) => {
                   </label>
                 )}
                 {renderField(field)}
-                {field.helpText && (
+                {fieldErrors[field.Id] && (
+                  <p className="text-sm text-red-600">{fieldErrors[field.Id]}</p>
+                )}
+                {field.helpText && !fieldErrors[field.Id] && (
                   <p className="text-sm text-gray-500">{field.helpText}</p>
                 )}
               </div>
