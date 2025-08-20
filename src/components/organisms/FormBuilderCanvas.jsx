@@ -628,20 +628,21 @@ const handleFieldDragEnd = (e) => {
               </div>
             )}
           </div>
-        ) : (
-          // Design Tab Content (Form Canvas)
-        {/* Main Canvas Area */}
-        <div
-            ref={canvasRef}
-            className={`bg-white rounded-xl shadow-card p-8 min-h-96 transition-all duration-300 ${
-              draggedFieldId ? "bg-primary-25" : ""
-            } ${
-              dragOverIndex !== null ? "border-2 border-primary-400 border-dashed shadow-lg" : "border border-gray-200"
-            }`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
->
+) : (
+          <>
+            {/* Design Tab Content (Form Canvas) */}
+            {/* Main Canvas Area */}
+            <div
+              ref={canvasRef}
+              className={`bg-white rounded-xl shadow-card p-8 min-h-96 transition-all duration-300 ${
+                draggedFieldId ? "bg-primary-25" : ""
+              } ${
+                dragOverIndex !== null ? "border-2 border-primary-400 border-dashed shadow-lg" : "border border-gray-200"
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
           {fields.length === 0 ? (
             <div className="text-center py-16 text-gray-500">
               <ApperIcon name="MousePointer2" className="w-12 h-12 mx-auto mb-4 text-gray-300" />
@@ -1113,7 +1114,8 @@ const handleFieldDragEnd = (e) => {
 )}
             </>
 )}
-        </div>
+            </div>
+          </>
         )}
       </div>
     </div>
