@@ -63,7 +63,8 @@ const validateForm = () => {
     const errors = [];
     const newFieldErrors = {};
     
-    form.fields.forEach(field => {
+const visibleFields = getVisibleFields(form.fields, formData);
+    visibleFields.forEach(field => {
       const value = formData[field.Id];
       let fieldError = null;
       
@@ -248,6 +249,34 @@ const errorClasses = hasError
           />
         );
     }
+};
+
+  const evaluateCondition = (condition, formData) => {
+    if (!condition || !condition.enabled || !condition.fieldId) {
+      return true; // Show field if no condition is set
+    }
+
+    const fieldValue = formData[condition.fieldId];
+    const { operator, value } = condition;
+
+    switch (operator) {
+      case 'equals':
+        return fieldValue === value;
+      case 'not_equals':
+        return fieldValue !== value;
+      case 'contains':
+        return fieldValue && fieldValue.toString().toLowerCase().includes(value.toLowerCase());
+      case 'is_empty':
+        return !fieldValue || fieldValue === '';
+      case 'is_not_empty':
+        return fieldValue && fieldValue !== '';
+      default:
+        return true;
+    }
+  };
+
+  const getVisibleFields = (fields, currentFormData) => {
+    return fields.filter(field => evaluateCondition(field.showCondition, currentFormData));
   };
 
   if (loading) return <Loading />;
@@ -345,8 +374,8 @@ const errorClasses = hasError
               const currentStepFields = steps[currentStep - 1] || [];
               const errors = [];
               const newFieldErrors = {};
-              
-              currentStepFields.forEach(field => {
+const visibleStepFields = getVisibleFields(currentStepFields, formData);
+              visibleStepFields.forEach(field => {
                 const value = formData[field.Id];
                 let fieldError = null;
                 
@@ -520,7 +549,7 @@ const errorClasses = hasError
 transition={{ duration: 0.3 }}
                   className="space-y-6"
                 >
-                  {(steps[currentStep - 1] || []).map(field => (
+{getVisibleFields(steps[currentStep - 1] || [], formData).map(field => (
                     <div key={field.Id} className="space-y-2">
                       {field.type !== "checkbox" && (
                         <label className="block text-sm font-medium text-gray-700">

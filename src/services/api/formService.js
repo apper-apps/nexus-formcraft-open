@@ -26,7 +26,15 @@ const newForm = {
       Id: getNextId(),
       name: formData.name || "Untitled Form",
       description: formData.description || "",
-      fields: formData.fields || [],
+fields: (formData.fields || []).map(field => ({
+        ...field,
+        showCondition: field.showCondition || {
+          enabled: false,
+          fieldId: '',
+          operator: 'equals',
+          value: ''
+        }
+      })),
       settings: formData.settings || {
         submitButtonText: "Submit",
         successMessage: "Thank you for your submission!",
@@ -82,8 +90,21 @@ async update(id, formData) {
     if (index === -1) {
 throw new Error("Form not found");
     }
-    forms[index] = { ...forms[index], ...formData };
-    return { ...forms[index] };
+const updatedForm = {
+      ...forms[index],
+      ...formData,
+      fields: (formData.fields || forms[index].fields || []).map(field => ({
+        ...field,
+        showCondition: field.showCondition || {
+          enabled: false,
+          fieldId: '',
+          operator: 'equals',
+          value: ''
+        }
+      }))
+    };
+    forms[index] = updatedForm;
+    return updatedForm;
   },
 
   async publish(id) {

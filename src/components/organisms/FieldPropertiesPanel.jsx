@@ -9,12 +9,19 @@ const [localLabel, setLocalLabel] = useState('');
   const [localPlaceholder, setLocalPlaceholder] = useState('');
   const [localRequired, setLocalRequired] = useState(false);
   const [localHelpText, setLocalHelpText] = useState('');
-  const [localOptions, setLocalOptions] = useState([]);
+const [localOptions, setLocalOptions] = useState([]);
   const [localMin, setLocalMin] = useState('');
   const [localMax, setLocalMax] = useState('');
   const [localMaxRating, setLocalMaxRating] = useState(5);
   const [localAcceptedTypes, setLocalAcceptedTypes] = useState('');
-  const selectedField = fields.find(field => field.Id === selectedFieldId);
+  const [localShowCondition, setLocalShowCondition] = useState({
+    enabled: false,
+    fieldId: '',
+    operator: 'equals',
+    value: ''
+  });
+const selectedField = fields.find(field => field.Id === selectedFieldId);
+  const availableFields = fields.filter(field => field.Id !== selectedFieldId);
 
 useEffect(() => {
     if (selectedField) {
@@ -26,7 +33,13 @@ useEffect(() => {
       setLocalMin(selectedField.min || '');
       setLocalMax(selectedField.max || '');
       setLocalMaxRating(selectedField.maxRating || 5);
-      setLocalAcceptedTypes(selectedField.acceptedTypes || '');
+setLocalAcceptedTypes(selectedField.acceptedTypes || '');
+      setLocalShowCondition(selectedField.showCondition || {
+        enabled: false,
+        fieldId: '',
+        operator: 'equals',
+        value: ''
+      });
     } else {
       setLocalLabel('');
       setLocalPlaceholder('');
@@ -36,7 +49,13 @@ useEffect(() => {
       setLocalMin('');
       setLocalMax('');
       setLocalMaxRating(5);
-      setLocalAcceptedTypes('');
+setLocalAcceptedTypes('');
+      setLocalShowCondition({
+        enabled: false,
+        fieldId: '',
+        operator: 'equals',
+        value: ''
+      });
     }
   }, [selectedField]);
 
@@ -94,7 +113,12 @@ const handleRequiredChange = (value) => {
     setLocalAcceptedTypes(value);
     updateField({ acceptedTypes: value });
   };
-
+function handleShowConditionChange(updates) {
+    const newCondition = { ...localShowCondition, ...updates };
+    setLocalShowCondition(newCondition);
+    updateField({ showCondition: newCondition });
+    toast.success('Show/hide condition updated');
+  }
   const deleteField = () => {
     if (!selectedFieldId) return;
     
@@ -117,6 +141,18 @@ const handleRequiredChange = (value) => {
     onFieldsChange([...fields, duplicatedField]);
     onFieldSelect(duplicatedField.Id);
     toast.success('Field duplicated successfully');
+  };
+
+const getFieldOptions = (fieldId) => {
+    const field = fields.find(f => f.Id === fieldId);
+    if (!field) return [];
+    
+    if (field.type === 'select' || field.type === 'radio') {
+      return field.options || [];
+    } else if (field.type === 'checkbox') {
+      return ['true', 'false'];
+    }
+    return [];
   };
 
   return (
@@ -342,6 +378,118 @@ name={
                   <p className="text-xs text-gray-500">Users must fill this field</p>
                 </div>
               </label>
+            </div>
+{/* Show/Hide Logic Section */}
+            <div className="border-t pt-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
+                <ApperIcon name="Eye" size={16} />
+                Show/Hide Logic
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="enableCondition"
+                    checked={localShowCondition.enabled}
+                    onChange={(e) => handleShowConditionChange({ enabled: e.target.checked })}
+                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <label htmlFor="enableCondition" className="text-sm text-gray-700">
+                    Enable conditional display
+                  </label>
+                </div>
+
+                {localShowCondition.enabled && (
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                    <div className="text-sm text-gray-600 mb-3">
+                      Show this field only when:
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">
+                          Field
+                        </label>
+                        <select
+                          value={localShowCondition.fieldId}
+                          onChange={(e) => handleShowConditionChange({ 
+                            fieldId: e.target.value,
+                            value: '' // Reset value when field changes
+                          })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        >
+                          <option value="">Select field...</option>
+                          {availableFields.map(field => (
+                            <option key={field.Id} value={field.Id}>
+                              {field.label || 'Untitled Field'}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">
+                          Condition
+                        </label>
+                        <select
+                          value={localShowCondition.operator}
+                          onChange={(e) => handleShowConditionChange({ operator: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        >
+                          <option value="equals">equals</option>
+                          <option value="not_equals">does not equal</option>
+                          <option value="contains">contains</option>
+                          <option value="is_empty">is empty</option>
+                          <option value="is_not_empty">is not empty</option>
+                        </select>
+                      </div>
+
+                      {localShowCondition.operator !== 'is_empty' && localShowCondition.operator !== 'is_not_empty' && (
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">
+                            Value
+                          </label>
+                          {localShowCondition.fieldId && getFieldOptions(localShowCondition.fieldId).length > 0 ? (
+                            <select
+                              value={localShowCondition.value}
+                              onChange={(e) => handleShowConditionChange({ value: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            >
+                              <option value="">Select value...</option>
+                              {getFieldOptions(localShowCondition.fieldId).map(option => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <Input
+                              value={localShowCondition.value}
+                              onChange={(e) => handleShowConditionChange({ value: e.target.value })}
+                              placeholder="Enter value..."
+                              className="text-sm"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {localShowCondition.fieldId && (
+                      <div className="text-xs text-gray-500 bg-white p-2 rounded border">
+                        <strong>Preview:</strong> This field will be shown when "
+                        {fields.find(f => f.Id === localShowCondition.fieldId)?.label || 'Selected field'}" 
+                        {' '}{localShowCondition.operator === 'equals' ? 'equals' : 
+                             localShowCondition.operator === 'not_equals' ? 'does not equal' :
+                             localShowCondition.operator === 'contains' ? 'contains' :
+                             localShowCondition.operator === 'is_empty' ? 'is empty' : 'is not empty'}
+                        {(localShowCondition.operator !== 'is_empty' && localShowCondition.operator !== 'is_not_empty') && 
+                          ` "${localShowCondition.value || '[value]'}"`}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Field Actions */}
