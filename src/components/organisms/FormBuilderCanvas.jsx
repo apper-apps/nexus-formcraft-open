@@ -644,16 +644,22 @@ const handleFieldDragEnd = (e) => {
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          removeField(field.Id);
+                          const fieldLabel = field.label || field.type || 'Untitled field';
+                          const confirmDelete = window.confirm(
+                            `Are you sure you want to delete "${fieldLabel}"?\n\nThis action cannot be undone.`
+                          );
+                          if (confirmDelete) {
+                            removeField(field.Id);
+                          }
                         }}
                         className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete field"
                       >
-                        <ApperIcon name="Trash2" className="w-4 h-4" />
+                        <ApperIcon name="X" size={16} className="text-gray-400 hover:text-red-500" />
                       </button>
                       <div 
                         className="cursor-move p-2 text-gray-400 hover:text-primary-500 transition-colors"
