@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -12,17 +12,24 @@ import Empty from "@/components/ui/Empty";
 import Loading from "@/components/ui/Loading";
 import Button from "@/components/atoms/Button";
 import Card from "@/components/atoms/Card";
+import Input from "@/components/atoms/Input";
 
-const FormResponses = () => {
-  const { formId } = useParams();
+export default function FormResponses() {
   const navigate = useNavigate();
+  const { formId } = useParams();
   const [form, setForm] = useState(null);
   const [responses, setResponses] = useState([]);
-const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
   const [selectedResponse, setSelectedResponse] = useState(null);
-
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [fieldFilters, setFieldFilters] = useState({});
+  const [showFilters, setShowFilters] = useState(false);
   useEffect(() => {
     loadData();
   }, [formId]);
@@ -64,15 +71,71 @@ const [loading, setLoading] = useState(true);
     setSelectedResponse(null);
 };
 
+// Filter responses based on search term, date range, and field filters
+  const filteredResponses = useMemo(() => {
+    return responseService.filterResponses(responses, {
+      searchTerm,
+      startDate,
+      endDate,
+      fieldFilters,
+      form
+    });
+  }, [responses, searchTerm, startDate, endDate, fieldFilters, form]);
+
+  // Get unique values for field filters
+  const getFieldOptions = (fieldId) => {
+    if (!form || !responses.length) return [];
+    
+    const field = form.fields.find(f => f.Id === fieldId);
+    if (!field) return [];
+    
+    // For select/radio fields, use predefined options
+    if ((field.type === 'select' || field.type === 'radio') && field.options) {
+      return field.options;
+    }
+    
+    // For other fields, get unique values from responses
+    const values = new Set();
+    responses.forEach(response => {
+      const value = response.data[fieldId];
+      if (value !== null && value !== undefined && value !== '') {
+        if (Array.isArray(value)) {
+          value.forEach(v => values.add(v));
+        } else {
+          values.add(value);
+        }
+      }
+    });
+    
+    return Array.from(values).sort();
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setStartDate("");
+    setEndDate("");
+    setFieldFilters({});
+    toast.success("All filters cleared");
+  };
+
+  const handleFieldFilterChange = (fieldId, value) => {
+    setFieldFilters(prev => ({
+      ...prev,
+      [fieldId]: value
+    }));
+  };
+
   const handleExportCSV = async () => {
-    if (!form || responses.length === 0) {
+    const responsesToExport = filteredResponses.length > 0 ? filteredResponses : responses;
+    
+    if (!form || responsesToExport.length === 0) {
       toast.error("No responses to export");
       return;
     }
 
     try {
       setExporting(true);
-      const csvContent = responseService.exportToCSV(form, responses);
+      const csvContent = responseService.exportToCSV(form, responsesToExport);
       
       // Create and download the CSV file
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -85,7 +148,8 @@ const [loading, setLoading] = useState(true);
       link.click();
       document.body.removeChild(link);
       
-      toast.success(`Exported ${responses.length} responses to CSV`);
+      const filterText = filteredResponses.length !== responses.length ? ' (filtered)' : '';
+      toast.success(`Exported ${responsesToExport.length} responses to CSV${filterText}`);
     } catch (error) {
       console.error('Export error:', error);
       toast.error("Failed to export responses");
@@ -107,13 +171,13 @@ const [loading, setLoading] = useState(true);
   if (error) return <Error message={error} onRetry={loadData} />;
   if (!form) return <Error message="Form not found" onRetry={() => navigate('/dashboard')} />;
 
-  return (
+return (
     <div className="p-4 lg:p-8">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8"
       >
         <div>
           <Button
@@ -129,11 +193,20 @@ className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8"
             {form.name} - Responses
           </h1>
           <p className="text-gray-600">
-            {responses.length} response{responses.length !== 1 ? 's' : ''} collected
+            {filteredResponses.length} of {responses.length} response{responses.length !== 1 ? 's' : ''} 
+            {filteredResponses.length !== responses.length && ' (filtered)'}
           </p>
         </div>
         {responses.length > 0 && (
-          <div className="mt-4 sm:mt-0">
+          <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
+            <Button
+              variant="ghost"
+              onClick={() => setShowFilters(!showFilters)}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              <ApperIcon name="Filter" className="w-4 h-4 mr-2" />
+              {showFilters ? 'Hide Filters' : 'Show Filters'}
+            </Button>
             <Button
               onClick={handleExportCSV}
               disabled={exporting}
@@ -146,11 +219,119 @@ className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8"
         )}
       </motion.div>
 
+      {/* Filters Panel */}
+      {responses.length > 0 && showFilters && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.3 }}
+          className="mb-6"
+        >
+          <Card className="p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 lg:mb-0">
+                Filter Responses
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="text-gray-600 hover:text-gray-800 self-start lg:self-auto"
+              >
+                <ApperIcon name="X" className="w-4 h-4 mr-2" />
+                Clear All
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mb-4">
+              {/* Search Bar */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Search responses
+                </label>
+                <div className="relative">
+                  <ApperIcon name="Search" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search in all fields..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Date Range */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  From date
+                </label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  To date
+                </label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Field Filters */}
+            {form.fields.filter(field => ['select', 'radio', 'checkbox'].includes(field.type)).length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Filter by field values</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {form.fields
+                    .filter(field => ['select', 'radio', 'checkbox'].includes(field.type))
+                    .map(field => (
+                      <div key={field.Id}>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          {field.label}
+                        </label>
+                        <select
+                          value={fieldFilters[field.Id] || ''}
+                          onChange={(e) => handleFieldFilterChange(field.Id, e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        >
+                          <option value="">All values</option>
+                          {getFieldOptions(field.Id).map(option => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </Card>
+        </motion.div>
+      )}
+
 {responses.length === 0 ? (
         <Empty
           title="No responses yet"
           description="This form hasn't received any submissions yet. Share your form link to start collecting responses."
           icon="Inbox"
+        />
+      ) : filteredResponses.length === 0 ? (
+        <Empty
+          title="No responses match your filters"
+          description="Try adjusting your search criteria or clearing some filters to see more results."
+          icon="Search"
+          actionLabel="Clear Filters"
+          onAction={clearAllFilters}
         />
       ) : (
         <motion.div
@@ -160,28 +341,28 @@ className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8"
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
+          <div className="hidden lg:block">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-900">
-                    Response ID
+                  <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Response
                   </th>
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-900">
+                  <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Submitted
                   </th>
                   {form.fields.map(field => (
-                    <th key={field.Id} className="text-left py-4 px-6 text-sm font-semibold text-gray-900 max-w-xs truncate">
+                    <th key={field.Id} className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {field.label}
                     </th>
                   ))}
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-900">
+                  <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {responses.map((response, index) => (
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredResponses.map((response, index) => (
                   <motion.tr
                     key={response.Id}
                     initial={{ opacity: 0, y: 20 }}
@@ -229,7 +410,7 @@ className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8"
 
           {/* Mobile Card View */}
           <div className="md:hidden space-y-4 p-4">
-            {responses.map((response, index) => (
+{filteredResponses.map((response, index) => (
               <motion.div
                 key={response.Id}
                 initial={{ opacity: 0, y: 20 }}
@@ -282,7 +463,7 @@ className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8"
                     <div className="text-xs text-gray-400 pt-1">
                       +{form.fields.length - 2} more field{form.fields.length - 2 !== 1 ? 's' : ''}
                     </div>
-)}
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -331,5 +512,3 @@ className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8"
     </div>
   );
 };
-
-export default FormResponses;

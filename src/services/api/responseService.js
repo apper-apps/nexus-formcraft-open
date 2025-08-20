@@ -166,6 +166,88 @@ return responses.filter(r => r.formId === parseInt(formId)).length;
       csvContent += row.map(escapeCSV).join(',') + '\n';
     });
 
-    return csvContent;
+return csvContent;
+  },
+
+  filterResponses(responses, filters) {
+    const { searchTerm, startDate, endDate, fieldFilters, form } = filters;
+    
+    if (!responses || !responses.length) return [];
+    
+    return responses.filter(response => {
+      // Search term filter - search across all field values
+      if (searchTerm && searchTerm.trim()) {
+        const searchLower = searchTerm.toLowerCase().trim();
+        let matchesSearch = false;
+        
+        // Search in response ID
+        if (response.Id.toString().includes(searchLower)) {
+          matchesSearch = true;
+        }
+        
+        // Search in all field values
+        if (!matchesSearch && form && form.fields) {
+          for (const field of form.fields) {
+            const value = response.data[field.Id];
+            if (value !== null && value !== undefined) {
+              const stringValue = Array.isArray(value) 
+                ? value.join(' ') 
+                : String(value);
+              
+              if (stringValue.toLowerCase().includes(searchLower)) {
+                matchesSearch = true;
+                break;
+              }
+            }
+          }
+        }
+        
+        if (!matchesSearch) return false;
+      }
+      
+      // Date range filters
+      if (startDate || endDate) {
+        const responseDate = new Date(response.submittedAt);
+        
+        if (startDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          if (responseDate < start) return false;
+        }
+        
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          if (responseDate > end) return false;
+        }
+      }
+      
+      // Field value filters
+      if (fieldFilters && Object.keys(fieldFilters).length > 0) {
+        for (const [fieldId, filterValue] of Object.entries(fieldFilters)) {
+          if (filterValue && filterValue.trim()) {
+            const responseValue = response.data[parseInt(fieldId)];
+            
+            if (responseValue === null || responseValue === undefined) {
+              return false;
+            }
+            
+            // Handle array values (checkboxes)
+            if (Array.isArray(responseValue)) {
+              if (!responseValue.includes(filterValue)) {
+                return false;
+              }
+            } else {
+              // Handle single values
+              if (String(responseValue) !== String(filterValue)) {
+                return false;
+              }
+            }
+          }
+        }
+      }
+      
+      return true;
+    });
   }
 };
