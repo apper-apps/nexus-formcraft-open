@@ -26,27 +26,41 @@ const [dragOverIndex, setDragOverIndex] = useState(null);
   const [activeTab, setActiveTab] = useState('design');
 const canvasRef = useRef(null);
   const [draggedFieldId, setDraggedFieldId] = useState(null);
+  const [dragStartPosition, setDragStartPosition] = useState(null);
 
-  const handleDragOver = (e) => {
+const handleDragOver = (e) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
     const canvas = canvasRef.current;
+    if (!canvas) return;
+    
     const rect = canvas.getBoundingClientRect();
     const y = e.clientY - rect.top;
     
-    // Calculate which position to insert at
+    // Calculate which position to insert at with improved accuracy
     let insertIndex = fields.length;
-    for (let i = 0; i < fields.length; i++) {
-      const fieldElement = canvas.children[i];
-      if (fieldElement) {
-        const fieldRect = fieldElement.getBoundingClientRect();
-        const fieldY = fieldRect.top - rect.top;
-        if (y < fieldY + fieldRect.height / 2) {
-          insertIndex = i;
-          break;
-        }
+    const fieldElements = canvas.querySelectorAll('[data-field-id]');
+    
+    for (let i = 0; i < fieldElements.length; i++) {
+      const fieldElement = fieldElements[i];
+      const fieldRect = fieldElement.getBoundingClientRect();
+      const fieldY = fieldRect.top - rect.top;
+      const fieldCenter = fieldY + fieldRect.height / 2;
+      
+      if (y < fieldCenter) {
+        insertIndex = i;
+        break;
       }
     }
-    setDragOverIndex(insertIndex);
+    
+    // Don't set drag over index if it's the same as current position
+    const draggedIndex = fields.findIndex(f => f.Id === draggedFieldId);
+    if (draggedIndex !== -1 && (insertIndex === draggedIndex || insertIndex === draggedIndex + 1)) {
+      setDragOverIndex(null);
+    } else {
+      setDragOverIndex(insertIndex);
+    }
   };
 
   const handleDragLeave = (e) => {
@@ -57,20 +71,27 @@ const canvasRef = useRef(null);
 
 const handleDrop = (e) => {
     e.preventDefault();
+    const finalDragOverIndex = dragOverIndex;
     setDragOverIndex(null);
     setDraggedFieldId(null);
+    setDragStartPosition(null);
     
     const transferData = e.dataTransfer.getData("application/json");
     if (!transferData) return;
     
     const data = JSON.parse(transferData);
-    const insertIndex = dragOverIndex !== null ? dragOverIndex : fields.length;
+    const insertIndex = finalDragOverIndex !== null ? finalDragOverIndex : fields.length;
     const newFields = [...fields];
     
     if (data.isReorder && data.fieldId) {
-      // Handle field reordering
+      // Handle field reordering with improved logic
       const draggedFieldIndex = fields.findIndex(f => f.Id === data.fieldId);
       if (draggedFieldIndex === -1) return;
+      
+      // Don't reorder if dropping in the same position
+      if (insertIndex === draggedFieldIndex || insertIndex === draggedFieldIndex + 1) {
+        return;
+      }
       
       const draggedField = fields[draggedFieldIndex];
       
@@ -85,6 +106,9 @@ const handleDrop = (e) => {
       
       // Insert at new position
       newFields.splice(targetIndex, 0, draggedField);
+      
+      // Update the fields immediately for live preview
+      onFieldsChange(newFields);
     } else {
       // Handle new field from library
 const newField = {
@@ -102,13 +126,14 @@ const newField = {
       };
       
       newFields.splice(insertIndex, 0, newField);
+      onFieldsChange(newFields);
     }
-    
-    onFieldsChange(newFields);
   };
 
-  const handleFieldDragStart = (e, fieldId) => {
+const handleFieldDragStart = (e, fieldId) => {
     setDraggedFieldId(fieldId);
+    const fieldIndex = fields.findIndex(f => f.Id === fieldId);
+    setDragStartPosition(fieldIndex);
     
     const dragData = {
       isReorder: true,
@@ -118,21 +143,43 @@ const newField = {
     e.dataTransfer.setData("application/json", JSON.stringify(dragData));
     e.dataTransfer.effectAllowed = 'move';
     
-    // Create drag preview
-    const dragPreview = e.target.cloneNode(true);
-    dragPreview.style.transform = 'rotate(5deg)';
-    dragPreview.style.opacity = '0.8';
-    document.body.appendChild(dragPreview);
-    e.dataTransfer.setDragImage(dragPreview, e.offsetX, e.offsetY);
+    // Create enhanced drag preview
+    const sourceElement = e.currentTarget;
+    const dragPreview = sourceElement.cloneNode(true);
     
-    // Clean up preview after a short delay
+    // Style the drag preview
+    dragPreview.style.position = 'absolute';
+    dragPreview.style.top = '-1000px';
+    dragPreview.style.left = '-1000px';
+    dragPreview.style.width = `${sourceElement.offsetWidth}px`;
+    dragPreview.style.transform = 'rotate(2deg) scale(0.95)';
+    dragPreview.style.opacity = '0.9';
+    dragPreview.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.15)';
+    dragPreview.style.border = '2px solid #8B7FFF';
+    dragPreview.style.borderRadius = '12px';
+    dragPreview.style.pointerEvents = 'none';
+    dragPreview.style.zIndex = '9999';
+    
+    document.body.appendChild(dragPreview);
+    
+    // Set drag image with better positioning
+    const rect = sourceElement.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    e.dataTransfer.setDragImage(dragPreview, offsetX, offsetY);
+    
+    // Clean up preview
     setTimeout(() => {
-      document.body.removeChild(dragPreview);
-    }, 0);
+      if (document.body.contains(dragPreview)) {
+        document.body.removeChild(dragPreview);
+      }
+    }, 1);
   };
 
-  const handleFieldDragEnd = (e) => {
+const handleFieldDragEnd = (e) => {
     setDraggedFieldId(null);
+    setDragOverIndex(null);
+    setDragStartPosition(null);
   };
   const removeField = (fieldId) => {
     onFieldsChange(fields.filter(field => field.Id !== fieldId));
@@ -441,10 +488,12 @@ const newField = {
           </div>
         ) : (
           // Design Tab Content (Form Canvas)
-          <div
+<div
             ref={canvasRef}
-            className={`bg-white rounded-xl shadow-card p-8 min-h-96 transition-all duration-200 ${
-              dragOverIndex !== null ? "border-2 border-primary-400 border-dashed" : "border border-gray-200"
+            className={`bg-white rounded-xl shadow-card p-8 min-h-96 transition-all duration-300 ${
+              draggedFieldId ? "bg-primary-25" : ""
+            } ${
+              dragOverIndex !== null ? "border-2 border-primary-400 border-dashed shadow-lg" : "border border-gray-200"
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -457,43 +506,56 @@ const newField = {
               <p>Drag fields from the library to start building your form</p>
             </div>
           ) : (
-            <div className="space-y-4">
+<div className="space-y-4">
 {fields.map((field, index) => (
                 <React.Fragment key={field.Id}>
-                  {/* Drop indicator */}
-                  {dragOverIndex === index && (
-                    <div className="h-1 bg-primary-400 rounded-full mb-2 animate-pulse shadow-sm" />
+                  {/* Enhanced drop indicator */}
+                  {dragOverIndex === index && draggedFieldId && (
+                    <motion.div 
+                      className="h-2 bg-gradient-to-r from-primary-400 to-primary-500 rounded-full mx-4 shadow-sm"
+                      initial={{ scaleX: 0, opacity: 0 }}
+                      animate={{ scaleX: 1, opacity: 1 }}
+                      exit={{ scaleX: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    />
                   )}
                 <motion.div
                   key={field.Id}
+                  data-field-id={field.Id}
                   layout
                   draggable
                   onDragStart={(e) => handleFieldDragStart(e, field.Id)}
                   onDragEnd={handleFieldDragEnd}
-                  className={`group relative p-4 border rounded-lg transition-all duration-200 cursor-grab active:cursor-grabbing ${
+                  className={`group relative p-4 border rounded-lg transition-all duration-200 ${
                     draggedFieldId === field.Id 
-                      ? 'opacity-50 transform scale-95 border-primary-400 shadow-lg' 
+                      ? 'opacity-40 transform scale-98 border-primary-400 shadow-xl bg-primary-25 cursor-grabbing' 
                       : selectedFieldId === field.Id 
-                        ? 'border-primary-500 bg-primary-50 shadow-md hover:border-primary-400' 
-                        : 'border-gray-200 hover:border-primary-300 hover:shadow-md'
+                        ? 'border-primary-500 bg-primary-50 shadow-md hover:border-primary-400 cursor-grab hover:cursor-grab' 
+                        : 'border-gray-200 hover:border-primary-300 hover:shadow-md cursor-grab hover:cursor-grab'
                   }`}
                   initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  animate={{ 
+                    opacity: draggedFieldId === field.Id ? 0.4 : 1, 
+                    y: 0,
+                    scale: draggedFieldId === field.Id ? 0.98 : 1
+                  }}
                   exit={{ opacity: 0, y: -20 }}
                   onClick={() => !draggedFieldId && onFieldSelect(field.Id)}
-                  whileHover={{ scale: draggedFieldId === field.Id ? 0.95 : 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ 
+                    scale: draggedFieldId === field.Id ? 0.98 : 1.01,
+                    transition: { duration: 0.1 }
+                  }}
+                  whileTap={{ scale: 0.99 }}
                 >
-                  {/* Drag handle indicator */}
-                  <div className="absolute left-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <ApperIcon name="GripVertical" size={16} className="text-gray-400" />
+                  {/* Enhanced drag handle indicator */}
+                  <div className={`absolute left-2 top-1/2 transform -translate-y-1/2 transition-all duration-200 ${
+                    draggedFieldId === field.Id ? 'opacity-100 text-primary-500' : 'opacity-0 group-hover:opacity-100'
+                  }`}>
+                    <ApperIcon name="GripVertical" size={16} className="text-gray-400 group-hover:text-primary-500" />
                   </div>
-                  {dragOverIndex === index && (
-                    <div className="absolute -top-1 left-0 right-0 h-0.5 bg-primary-500 rounded-full" />
-                  )}
                   
                   <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-3">
+                    <div className="flex-1 space-y-3 ml-6">
                       <div className="flex items-center gap-2">
 <ApperIcon 
                           name={field.type === "text" ? "Type" : 
@@ -510,8 +572,11 @@ const newField = {
                           className="w-4 h-4 text-gray-400"
                         />
 <div 
-                          className="font-medium text-gray-900 cursor-pointer hover:bg-gray-50 rounded px-2 py-1"
-                          onClick={() => onFieldSelect(field.Id)}
+                          className="font-medium text-gray-900 cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onFieldSelect(field.Id);
+                          }}
                         >
                           {field.label || 'Click to edit label'}
                         </div>
@@ -521,14 +586,18 @@ const newField = {
                             checked={field.required}
                             onChange={(e) => updateField(field.Id, { required: e.target.checked })}
                             className="rounded"
+                            onClick={(e) => e.stopPropagation()}
                           />
                           Required
                         </label>
 </div>
                       
                       <div 
-                        className="w-full text-sm text-gray-500 cursor-pointer hover:bg-gray-50 rounded px-2 py-1"
-                        onClick={() => onFieldSelect(field.Id)}
+                        className="w-full text-sm text-gray-500 cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onFieldSelect(field.Id);
+                        }}
                       >
                         {field.placeholder || 'Click to edit placeholder'}
                       </div>
@@ -547,24 +616,27 @@ const newField = {
                                 }}
                                 className="flex-1 text-sm px-2 py-1 border border-gray-200 rounded"
                                 placeholder="Option text"
+                                onClick={(e) => e.stopPropagation()}
                               />
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   const newOptions = field.options.filter((_, i) => i !== optionIndex);
                                   updateField(field.Id, { options: newOptions });
                                 }}
-                                className="text-red-500 hover:text-red-700"
+                                className="text-red-500 hover:text-red-700 transition-colors"
                               >
                                 <ApperIcon name="X" className="w-4 h-4" />
                               </button>
                             </div>
                           ))}
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               const newOptions = [...field.options, ""];
                               updateField(field.Id, { options: newOptions });
                             }}
-                            className="text-sm text-primary-600 hover:text-primary-700"
+                            className="text-sm text-primary-600 hover:text-primary-700 transition-colors"
                           >
                             + Add option
                           </button>
@@ -572,27 +644,41 @@ const newField = {
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <button
-                        onClick={() => removeField(field.Id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeField(field.Id);
+                        }}
                         className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete field"
                       >
                         <ApperIcon name="Trash2" className="w-4 h-4" />
                       </button>
-                      <div className="cursor-move p-2 text-gray-400 hover:text-gray-600">
+                      <div 
+                        className="cursor-move p-2 text-gray-400 hover:text-primary-500 transition-colors"
+                        title="Drag to reorder"
+                      >
                         <ApperIcon name="GripVertical" className="w-4 h-4" />
                       </div>
                     </div>
                   </div>
-                  
-                  {dragOverIndex === fields.length && index === fields.length - 1 && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary-500 rounded-full" />
-                  )}
-</motion.div>
+                </motion.div>
                 </React.Fragment>
               ))}
+              
+              {/* Final drop indicator */}
+              {dragOverIndex === fields.length && draggedFieldId && (
+                <motion.div 
+                  className="h-2 bg-gradient-to-r from-primary-400 to-primary-500 rounded-full mx-4 shadow-sm"
+                  initial={{ scaleX: 0, opacity: 0 }}
+                  animate={{ scaleX: 1, opacity: 1 }}
+                  exit={{ scaleX: 0, opacity: 0 }}
+transition={{ duration: 0.2 }}
+                />
+              )}
             </div>
-)}
+          )}
           </div>
         )}
       </div>
