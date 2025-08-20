@@ -167,13 +167,14 @@ name={
                     selectedField.type === 'number' ? 'Hash' :
                     selectedField.type === 'date' ? 'Calendar' :
                     selectedField.type === 'file' ? 'Upload' :
-                    selectedField.type === 'rating' ? 'Star' : 'Type'
+                    selectedField.type === 'rating' ? 'Star' :
+                    selectedField.type === 'page-break' ? 'SeparatorHorizontal' : 'Type'
                   }
                   size={16} 
                   className="text-gray-600" 
                 />
                 <span className="text-sm font-medium text-gray-700 capitalize">
-                  {selectedField.type} Field
+                  {selectedField.type === 'page-break' ? 'Page Break' : `${selectedField.type} Field`}
                 </span>
               </div>
             </div>
@@ -291,21 +292,41 @@ name={
               </div>
             )}
 
-{/* Help Text Input */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Help Text
-              </label>
-              <Input
-                value={localHelpText}
-                onChange={(e) => handleHelpTextChange(e.target.value)}
-                placeholder="Enter help text for users"
-                className="w-full"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Additional guidance or instructions for this field
-              </p>
-            </div>
+{/* Page Break Title - Only for page-break type */}
+            {selectedField.type === 'page-break' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Step Title
+                </label>
+                <Input
+                  value={selectedField.stepTitle || ''}
+                  onChange={(e) => updateField({ stepTitle: e.target.value })}
+                  placeholder="Enter step title (optional)"
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Optional title for this step in the multi-step form
+                </p>
+              </div>
+            )}
+
+            {/* Help Text Input - Only for non-page-break fields */}
+            {selectedField.type !== 'page-break' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Help Text
+                </label>
+                <Input
+                  value={localHelpText}
+                  onChange={(e) => handleHelpTextChange(e.target.value)}
+                  placeholder="Enter help text for users"
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Additional guidance or instructions for this field
+                </p>
+              </div>
+            )}
 
             {/* Required Toggle */}
             <div>

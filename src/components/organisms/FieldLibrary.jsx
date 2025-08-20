@@ -79,8 +79,14 @@ placeholder: "Check this box"
       type: "rating",
       label: "Rating Field",
       icon: "Star",
-      description: "Star rating field",
+description: "Star rating field",
       maxRating: 5
+    },
+    {
+      type: "page-break",
+      label: "Page Break",
+      icon: "SeparatorHorizontal",
+      description: "Split form into multiple steps"
     }
   ];
 

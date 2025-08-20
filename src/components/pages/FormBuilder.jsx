@@ -26,7 +26,8 @@ const FormBuilder = () => {
   const [currentForm, setCurrentForm] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
+const [isEditing, setIsEditing] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
   
   // History management for undo/redo
   const [history, setHistory] = useState([{ formName: "", fields: [] }]);
@@ -45,7 +46,7 @@ const FormBuilder = () => {
     }
   }, [formId]);
 
-  const loadTemplate = async (templateId) => {
+const loadTemplate = async (templateId) => {
     try {
       setError("");
       setLoading(true);
@@ -157,6 +158,29 @@ const loadForm = async () => {
       toast.success("Redo successful");
     }
   };
+// Calculate form steps based on page breaks
+  const getFormSteps = () => {
+    const steps = [];
+    let currentStepFields = [];
+    
+    fields.forEach(field => {
+      if (field.type === 'page-break') {
+        if (currentStepFields.length > 0) {
+          steps.push([...currentStepFields]);
+          currentStepFields = [];
+        }
+      } else {
+        currentStepFields.push(field);
+      }
+    });
+    
+    // Add remaining fields as the last step
+    if (currentStepFields.length > 0) {
+      steps.push(currentStepFields);
+    }
+    
+    return steps.length > 0 ? steps : [[]];
+  };
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -171,7 +195,6 @@ const loadForm = async () => {
         }
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [historyIndex, history]);
@@ -277,8 +300,11 @@ return (
         onPublish={handlePublish}
         onUnpublish={handleUnpublish}
         onShowPublishModal={() => setShowPublishModal(true)}
-formStyle={formStyle}
+        formStyle={formStyle}
         onStyleChange={handleStyleChange}
+        formSteps={getFormSteps()}
+        currentStep={currentStep}
+        onStepChange={setCurrentStep}
       />
       <FieldPropertiesPanel
         selectedFieldId={selectedFieldId}

@@ -18,6 +18,8 @@ const [formData, setFormData] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [completedSteps, setCompletedSteps] = useState(new Set());
   useEffect(() => {
     loadForm();
   }, [publishId]);
@@ -313,42 +315,284 @@ const errorClasses = hasError
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-{form.fields.map(field => (
-              <div key={field.Id} className="space-y-2">
-                {field.type !== "checkbox" && (
-                  <label className="block text-sm font-medium text-gray-700">
-                    {field.label}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                  </label>
-                )}
-                {renderField(field)}
-                {fieldErrors[field.Id] && (
-                  <p className="text-sm text-red-600">{fieldErrors[field.Id]}</p>
-                )}
-                {field.helpText && !fieldErrors[field.Id] && (
-                  <p className="text-sm text-gray-500">{field.helpText}</p>
-                )}
-              </div>
-            ))}
+{(() => {
+            // Calculate form steps
+            const formSteps = [];
+            let currentStepFields = [];
+            
+            form.fields.forEach(field => {
+              if (field.type === 'page-break') {
+                if (currentStepFields.length > 0) {
+                  formSteps.push([...currentStepFields]);
+                  currentStepFields = [];
+                }
+              } else {
+                currentStepFields.push(field);
+              }
+            });
+            
+            // Add remaining fields as the last step
+            if (currentStepFields.length > 0) {
+              formSteps.push(currentStepFields);
+            }
+            
+            // If no steps, show single step with all fields
+// If no steps, show single step with all fields
+            const steps = formSteps.length > 0 ? formSteps : [form.fields.filter(field => field.type !== 'page-break')];
+            const isMultiStep = steps.length > 1;
+              const errors = [];
+              const newFieldErrors = {};
+              
+              currentStepFields.forEach(field => {
+                const value = formData[field.Id];
+                let fieldError = null;
+                
+                // Required field validation
+                if (field.required) {
+                  if (!value || (typeof value === "string" && !value.trim())) {
+                    fieldError = `${field.label} is required`;
+                    errors.push(fieldError);
+                  }
+                }
+                
+                // Email format validation
+                if (field.type === "email" && value && typeof value === "string" && value.trim()) {
+                  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  if (!emailRegex.test(value.trim())) {
+                    fieldError = "Please enter a valid email address";
+                    errors.push(fieldError);
+                  }
+                }
+                
+                // Number format validation
+                if (field.type === "number" && value && typeof value === "string" && value.trim()) {
+                  const numValue = parseFloat(value);
+                  if (isNaN(numValue)) {
+                    fieldError = "Please enter a valid number";
+                    errors.push(fieldError);
+                  } else {
+                    if (field.min !== undefined && numValue < field.min) {
+                      fieldError = `Value must be at least ${field.min}`;
+                      errors.push(fieldError);
+                    }
+                    if (field.max !== undefined && numValue > field.max) {
+                      fieldError = `Value must be no more than ${field.max}`;
+                      errors.push(fieldError);
+                    }
+                  }
+                }
+                
+                newFieldErrors[field.Id] = fieldError;
+              });
+              
+              setFieldErrors(prev => ({ ...prev, ...newFieldErrors }));
+              return errors;
+            };
 
-            <div className="pt-6 border-t border-gray-200">
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="w-full inline-flex items-center justify-center gap-2"
-              >
-                {submitting ? (
+            const handleNext = () => {
+              const validationErrors = validateCurrentStep();
+              if (validationErrors.length > 0) {
+                toast.error("Please correct the errors before continuing");
+                return;
+              }
+              
+              setCompletedSteps(prev => new Set([...prev, currentStep]));
+              setCurrentStep(currentStep + 1);
+              
+              // Clear any field errors from previous steps
+              const nextStepFieldIds = steps[currentStep]?.map(field => field.Id) || [];
+              setFieldErrors(prev => {
+                const newErrors = { ...prev };
+                nextStepFieldIds.forEach(fieldId => {
+                  delete newErrors[fieldId];
+                });
+                return newErrors;
+              });
+            };
+
+            const handlePrevious = () => {
+              setCurrentStep(currentStep - 1);
+            };
+
+            const handleStepSubmit = async (e) => {
+              e.preventDefault();
+              
+              if (isMultiStep && currentStep < steps.length) {
+                handleNext();
+              } else {
+                // Final submit
+                const allValidationErrors = validateForm();
+                if (allValidationErrors.length > 0) {
+                  toast.error("Please correct all errors before submitting");
+                  return;
+                }
+                
+                setSubmitting(true);
+                try {
+                  const { responseService } = await import('@/services/api/responseService');
+                  await responseService.create(form.Id, formData);
+                  await formService.incrementSubmissionCount(form.Id);
+                  
+                  setSubmitted(true);
+                  toast.success(form.settings?.successMessage || "Form submitted successfully!");
+                } catch (err) {
+                  console.error('Form submission error:', err);
+                  toast.error("Failed to submit form. Please try again.");
+                } finally {
+                  setSubmitting(false);
+                }
+              }
+            };
+
+            return (
+              <form onSubmit={handleStepSubmit} className="space-y-6">
+                {isMultiStep && (
                   <>
-<ApperIcon name="Loader2" className="w-4 h-4 animate-spin" />
-                    Submitting...
+                    {/* Progress Bar */}
+                    <div className="mb-8">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-medium text-gray-700">
+                          Step {currentStep} of {steps.length}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {Math.round((currentStep / steps.length) * 100)}% Complete
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full"
+                          initial={{ width: "0%" }}
+                          animate={{ width: `${(currentStep / steps.length) * 100}%` }}
+                          transition={{ duration: 0.5, ease: "easeInOut" }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Step Indicators */}
+                    <div className="flex items-center justify-center mb-8">
+                      <div className="flex items-center space-x-4">
+                        {steps.map((_, index) => {
+                          const stepNumber = index + 1;
+                          const isCompleted = completedSteps.has(stepNumber);
+                          const isCurrent = stepNumber === currentStep;
+                          const isPast = stepNumber < currentStep;
+                          
+                          return (
+                            <div key={stepNumber} className="flex items-center">
+                              <motion.div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                                  isCompleted || isPast
+                                    ? 'bg-primary-500 text-white' 
+                                    : isCurrent
+                                    ? 'bg-primary-100 text-primary-700 ring-2 ring-primary-500'
+                                    : 'bg-gray-200 text-gray-500'
+                                }`}
+                                whileScale={isCurrent ? 1.1 : 1}
+                              >
+                                {isCompleted || isPast ? (
+                                  <ApperIcon name="Check" size={16} />
+                                ) : (
+                                  stepNumber
+                                )}
+                              </motion.div>
+                              {index < steps.length - 1 && (
+                                <div className={`w-12 h-1 mx-2 rounded-full transition-colors ${
+                                  isPast ? 'bg-primary-500' : 'bg-gray-200'
+                                }`} />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </>
-                ) : (
-                  form.settings?.submitButtonText || "Submit"
-)}
-              </Button>
-            </div>
-          </form>
+                )}
+
+                {/* Current Step Fields */}
+                <motion.div
+                  key={currentStep}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  {currentStepFields.map(field => (
+                    <div key={field.Id} className="space-y-2">
+                      {field.type !== "checkbox" && (
+                        <label className="block text-sm font-medium text-gray-700">
+                          {field.label}
+                          {field.required && <span className="text-red-500 ml-1">*</span>}
+                        </label>
+                      )}
+                      {renderField(field)}
+                      {fieldErrors[field.Id] && (
+                        <p className="text-sm text-red-600">{fieldErrors[field.Id]}</p>
+                      )}
+                      {field.helpText && !fieldErrors[field.Id] && (
+                        <p className="text-sm text-gray-500">{field.helpText}</p>
+                      )}
+                    </div>
+                  ))}
+                </motion.div>
+
+                {/* Navigation Buttons */}
+                <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+                  {isMultiStep ? (
+                    <>
+                      <Button
+                        type="button"
+                        onClick={handlePrevious}
+                        disabled={currentStep === 1}
+                        variant="secondary"
+                        className="inline-flex items-center gap-2"
+                      >
+                        <ApperIcon name="ChevronLeft" className="w-4 h-4" />
+                        Previous
+                      </Button>
+
+                      <Button
+                        type="submit"
+                        disabled={submitting}
+                        className="inline-flex items-center gap-2"
+                      >
+                        {currentStep === steps.length ? (
+                          submitting ? (
+                            <>
+                              <ApperIcon name="Loader2" className="w-4 h-4 animate-spin" />
+                              Submitting...
+                            </>
+                          ) : (
+                            form.settings?.submitButtonText || "Submit"
+                          )
+                        ) : (
+                          <>
+                            Next
+                            <ApperIcon name="ChevronRight" className="w-4 h-4" />
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-full inline-flex items-center justify-center gap-2"
+                    >
+                      {submitting ? (
+                        <>
+                          <ApperIcon name="Loader2" className="w-4 h-4 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        form.settings?.submitButtonText || "Submit"
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </form>
+            );
+          })()}
         </motion.div>
       </div>
     </div>
