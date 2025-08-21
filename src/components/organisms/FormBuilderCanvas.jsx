@@ -847,11 +847,11 @@ const handleFieldDragEnd = (e) => {
                 {notificationSettings.recipients.length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Current Recipients ({notificationSettings.recipients.length})
+Current Recipients ({notificationSettings.recipients.length})
                     </label>
-<div className="space-y-2">
+                    <div className="space-y-2">
                       {notificationSettings.recipients.map((email, index) => (
-                        <div key={`recipient-${index}`} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                        <div key={email} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
                           <div className="flex items-center gap-2">
                             <ApperIcon name="Mail" className="w-4 h-4 text-gray-400" />
                             <span className="text-sm text-gray-700">{email}</span>
@@ -964,10 +964,10 @@ const handleFieldDragEnd = (e) => {
                       <span className="text-sm font-medium text-gray-700">
                         Step {currentStep} of {formSteps.length}
                       </span>
-                      <div className="flex space-x-1">
+<div className="flex space-x-1">
                         {formSteps.map((_, index) => (
                           <button
-                            key={index}
+                            key={`step-${index + 1}`}
                             onClick={() => onStepChange(index + 1)}
                             className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
                               currentStep === index + 1
