@@ -261,9 +261,7 @@ value={form.publishUrl || ''}
           </div>
 
           <div className="flex items-center gap-3">
-
-          <div className="flex items-center gap-3">
-<Button
+            <Button
               onClick={() => copyToClipboard(form.publishUrl || '', 'link')}
               className="flex-1 inline-flex items-center justify-center gap-2"
               disabled={copying}
