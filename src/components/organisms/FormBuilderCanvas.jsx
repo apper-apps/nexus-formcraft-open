@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect } from "react";
-import { toast } from 'react-toastify';
+import React, { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
@@ -97,6 +97,126 @@ const handleDragLeave = (e) => {
     }
   };
 
+// Comprehensive field validation function
+  const validateFieldData = (data) => {
+    const supportedTypes = [
+      'text', 'email', 'number', 'textarea', 'select', 'radio', 
+      'checkbox', 'date', 'time', 'url', 'tel', 'password', 
+      'file', 'rating', 'slider', 'page-break', 'heading', 'paragraph'
+    ];
+
+    // Validate field type
+    if (!data.type || !supportedTypes.includes(data.type)) {
+      return {
+        isValid: false,
+        error: `Unsupported field type: ${data.type || 'undefined'}. Supported types: ${supportedTypes.join(', ')}`
+      };
+    }
+
+    // Validate required properties for specific field types
+    if (data.type === 'select' || data.type === 'radio') {
+      if (!data.options || !Array.isArray(data.options) || data.options.length === 0) {
+        return {
+          isValid: false,
+          error: `${data.type} fields require at least one option`
+        };
+      }
+    }
+
+    if (data.type === 'number') {
+      if (data.min !== undefined && data.max !== undefined && data.min > data.max) {
+        return {
+          isValid: false,
+          error: 'Number field minimum value cannot be greater than maximum value'
+        };
+      }
+    }
+
+    if (data.type === 'rating') {
+      if (data.maxRating && (data.maxRating < 1 || data.maxRating > 10)) {
+        return {
+          isValid: false,
+          error: 'Rating field maximum rating must be between 1 and 10'
+        };
+      }
+    }
+
+    return { isValid: true };
+  };
+
+  // Enhanced error recovery function
+  const handleDragError = (error, fallbackData = null) => {
+    console.error('Drag operation error:', error);
+    
+    // Show user-friendly error message
+    toast.error(`Drag failed: ${error}. Try using click-to-add instead.`, {
+      autoClose: 5000,
+      closeOnClick: true
+    });
+
+    // Offer fallback if data is available
+    if (fallbackData) {
+      setTimeout(() => {
+        toast.info(
+          <div className="flex flex-col gap-2">
+            <span>Would you like to add this field anyway?</span>
+            <Button
+              size="sm"
+              onClick={() => addFieldWithFallback(fallbackData)}
+              className="w-fit"
+            >
+              Add Field
+            </Button>
+          </div>,
+          { autoClose: false, closeOnClick: false }
+        );
+      }, 1000);
+    }
+  };
+
+  // Fallback field addition method
+  const addFieldWithFallback = (fieldData) => {
+    try {
+      const validation = validateFieldData(fieldData);
+      if (!validation.isValid) {
+        toast.error(validation.error);
+        return;
+      }
+
+      const newField = createFieldFromData(fieldData, fields.length);
+      const newFields = [...fields, newField];
+      onFieldsChange(newFields);
+      
+      toast.success(`${fieldData.label || newField.label} added successfully`);
+      setTimeout(() => {
+        onFieldSelect(newField.Id);
+      }, 100);
+    } catch (error) {
+      toast.error('Failed to add field. Please try again.');
+    }
+  };
+
+  // Helper function to create field from data
+  const createFieldFromData = (data, insertIndex) => {
+    return {
+      Id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000),
+      type: data.type,
+      label: data.label || `${data.type.charAt(0).toUpperCase() + data.type.slice(1)} Field`,
+      placeholder: data.placeholder || `Enter ${data.type === 'textarea' ? 'text' : data.type}`,
+      required: false,
+      helpText: "",
+      options: data.type === "select" || data.type === "radio" ? (data.options && data.options.length > 0 ? data.options : ["Option 1", "Option 2"]) : [],
+      min: data.type === "number" ? (data.min !== undefined ? data.min : 0) : undefined,
+      max: data.type === "number" ? (data.max !== undefined ? data.max : 100) : undefined,
+      maxRating: data.type === "rating" ? (data.maxRating || 5) : undefined,
+      acceptedTypes: data.type === "file" ? (data.acceptedTypes || ".pdf,.doc,.docx,.jpg,.png") : undefined,
+      stepTitle: data.type === "page-break" ? (data.stepTitle || "New Step") : undefined,
+      showCondition: null,
+      validationRules: [],
+      position: insertIndex
+    };
+  };
+
 const handleDrop = (e) => {
     e.preventDefault();
     const finalDragOverIndex = dragOverIndex;
@@ -108,84 +228,111 @@ const handleDrop = (e) => {
     setIsDraggedOver(false);
     setDraggedFromLibrary(false);
     
-    const transferData = e.dataTransfer.getData("application/json");
-    if (!transferData) {
-      toast.error('Drag operation failed - no data received');
-      return;
-    }
-    
-    let data;
     try {
-      data = JSON.parse(transferData);
-    } catch (err) {
-      toast.error('Invalid drag data format');
-      return;
-    }
-    
-    const insertIndex = finalDragOverIndex !== null ? finalDragOverIndex : fields.length;
-    const newFields = [...fields];
-    
-    if (data.isReorder && data.fieldId) {
-      // Handle field reordering with improved logic
-      const draggedFieldIndex = fields.findIndex(f => f.Id === data.fieldId);
-      if (draggedFieldIndex === -1) {
-        toast.error('Could not find field to reorder');
+      const transferData = e.dataTransfer.getData("application/json");
+      if (!transferData) {
+        handleDragError('No data received from drag operation');
         return;
       }
       
-      // Don't reorder if dropping in the same position
-      if (insertIndex === draggedFieldIndex || insertIndex === draggedFieldIndex + 1) {
+      let data;
+      try {
+        data = JSON.parse(transferData);
+      } catch (err) {
+        handleDragError('Invalid drag data format', null);
         return;
       }
       
-      const draggedField = fields[draggedFieldIndex];
-      
-      // Remove from old position
-      newFields.splice(draggedFieldIndex, 1);
-      
-      // Calculate new insertion index (adjust for removal if needed)
-      let targetIndex = insertIndex;
-      if (draggedFieldIndex < insertIndex) {
-        targetIndex = insertIndex - 1;
+      // Comprehensive validation for new fields
+      if (!data.isReorder) {
+        const validation = validateFieldData(data);
+        if (!validation.isValid) {
+          handleDragError(validation.error, data);
+          return;
+        }
       }
       
-      // Insert at new position
-      newFields.splice(targetIndex, 0, draggedField);
+      const insertIndex = finalDragOverIndex !== null ? finalDragOverIndex : fields.length;
+      const newFields = [...fields];
       
-      // Update the fields immediately for live preview
-      onFieldsChange(newFields);
-      
-      // Show success feedback
-      toast.success('Field reordered successfully');
-    } else {
-      // Handle new field from library
-      const newField = {
-        Id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000), // Ensure unique integer ID
-        type: data.type,
-        label: data.label || `${data.type.charAt(0).toUpperCase() + data.type.slice(1)} Field`,
-        placeholder: data.placeholder || `Enter ${data.type === 'textarea' ? 'text' : data.type}`,
-        required: false,
-        helpText: "",
-        options: data.type === "select" || data.type === "radio" ? (data.options && data.options.length > 0 ? data.options : ["Option 1", "Option 2"]) : [],
-        min: data.type === "number" ? (data.min !== undefined ? data.min : 0) : undefined,
-        max: data.type === "number" ? (data.max !== undefined ? data.max : 100) : undefined,
-        maxRating: data.type === "rating" ? (data.maxRating || 5) : undefined,
-        acceptedTypes: data.type === "file" ? (data.acceptedTypes || ".pdf,.doc,.docx,.jpg,.png") : undefined,
-        stepTitle: data.type === "page-break" ? (data.stepTitle || "New Step") : undefined,
-        // Ensure all fields have complete structure for immediate rendering
-        showCondition: null,
-        validationRules: [],
-        position: insertIndex
-      };
-      
-      newFields.splice(insertIndex, 0, newField);
-      onFieldsChange(newFields);
-      
-      // Show success feedback and auto-select the new field
-      toast.success(`${data.label || newField.label} added to form`);
-      setTimeout(() => {
-        onFieldSelect(newField.Id);
-      }, 100);
+      if (data.isReorder && data.fieldId) {
+        // Handle field reordering with enhanced validation
+        const draggedFieldIndex = fields.findIndex(f => f.Id === data.fieldId);
+        if (draggedFieldIndex === -1) {
+          handleDragError('Could not find field to reorder');
+          return;
+        }
+        
+        // Don't reorder if dropping in the same position
+        if (insertIndex === draggedFieldIndex || insertIndex === draggedFieldIndex + 1) {
+          toast.info('Field is already in this position');
+          return;
+        }
+        
+        const draggedField = fields[draggedFieldIndex];
+        
+        // Validate field before moving
+        if (!draggedField || !draggedField.type) {
+          handleDragError('Invalid field data for reordering');
+          return;
+        }
+        
+        // Remove from old position
+        newFields.splice(draggedFieldIndex, 1);
+        
+        // Calculate new insertion index (adjust for removal if needed)
+        let targetIndex = insertIndex;
+        if (draggedFieldIndex < insertIndex) {
+          targetIndex = insertIndex - 1;
+        }
+        
+        // Insert at new position
+        newFields.splice(targetIndex, 0, draggedField);
+        
+        // Update the fields immediately for live preview
+        onFieldsChange(newFields);
+        
+        // Show success feedback with position info
+        toast.success(`Field moved to position ${targetIndex + 1}`);
+      } else {
+        // Handle new field from library with enhanced validation
+        try {
+          const newField = createFieldFromData(data, insertIndex);
+          
+          // Additional validation for edge cases
+          if (fields.length > 50) {
+            toast.warning('Form has many fields. Consider using page breaks for better user experience.');
+          }
+          
+          // Check for duplicate field names
+          const duplicateLabel = fields.find(f => 
+            f.label.toLowerCase() === newField.label.toLowerCase()
+          );
+          if (duplicateLabel) {
+            newField.label = `${newField.label} (${fields.length + 1})`;
+          }
+          
+          newFields.splice(insertIndex, 0, newField);
+          onFieldsChange(newFields);
+          
+          // Show success feedback with field details
+          toast.success(
+            <div className="flex flex-col gap-1">
+              <span className="font-medium">{newField.label} added successfully</span>
+              <span className="text-sm opacity-75">Position: {insertIndex + 1} of {newFields.length}</span>
+            </div>
+          );
+          
+          // Auto-select the new field with delay for better UX
+          setTimeout(() => {
+            onFieldSelect(newField.Id);
+          }, 100);
+        } catch (error) {
+          handleDragError('Failed to create field from drag data', data);
+        }
+      }
+    } catch (error) {
+      handleDragError('Unexpected error during drop operation');
     }
   };
 
@@ -236,26 +383,103 @@ const handleFieldDragStart = (e, fieldId) => {
   };
 
 const handleFieldDragEnd = (e) => {
+    // Enhanced drag end with error recovery
     setDraggedFieldId(null);
     setDragOverIndex(null);
     setDragStartPosition(null);
+    
+    // Check if drag was successful (no data transfer means potential failure)
+    const transferData = e.dataTransfer?.getData("application/json");
+    if (!transferData && e.dataTransfer?.effectAllowed !== 'none') {
+      toast.warning('Drag operation may have failed. Try using click-to-add as an alternative.');
+    }
   };
+// Enhanced field management with validation and error handling
   const removeField = (fieldId) => {
-    onFieldsChange(fields.filter(field => field.Id !== fieldId));
+    try {
+      const fieldToRemove = fields.find(f => f.Id === fieldId);
+      if (!fieldToRemove) {
+        toast.error('Field not found for removal');
+        return;
+      }
+      
+      const newFields = fields.filter(field => field.Id !== fieldId);
+      onFieldsChange(newFields);
+      toast.success(`${fieldToRemove.label} removed from form`);
+    } catch (error) {
+      toast.error('Failed to remove field. Please try again.');
+    }
   };
 
   const updateField = (fieldId, updates) => {
-    onFieldsChange(fields.map(field => 
-      field.Id === fieldId ? { ...field, ...updates } : field
-    ));
+    try {
+      const fieldExists = fields.find(f => f.Id === fieldId);
+      if (!fieldExists) {
+        toast.error('Field not found for update');
+        return;
+      }
+      
+      // Validate updates if they include field type changes
+      if (updates.type && updates.type !== fieldExists.type) {
+        const validation = validateFieldData({ ...fieldExists, ...updates });
+        if (!validation.isValid) {
+          toast.error(validation.error);
+          return;
+        }
+      }
+      
+      onFieldsChange(fields.map(field => 
+        field.Id === fieldId ? { ...field, ...updates } : field
+      ));
+    } catch (error) {
+      toast.error('Failed to update field. Please try again.');
+    }
   };
 
   const moveField = (fromIndex, toIndex) => {
-    const newFields = [...fields];
-    const [movedField] = newFields.splice(fromIndex, 1);
-    newFields.splice(toIndex, 0, movedField);
-    onFieldsChange(newFields);
-};
+    try {
+      if (fromIndex < 0 || fromIndex >= fields.length || toIndex < 0 || toIndex >= fields.length) {
+        toast.error('Invalid field position for move operation');
+        return;
+      }
+      
+      const newFields = [...fields];
+      const [movedField] = newFields.splice(fromIndex, 1);
+      newFields.splice(toIndex, 0, movedField);
+      onFieldsChange(newFields);
+      toast.success(`Field moved from position ${fromIndex + 1} to ${toIndex + 1}`);
+    } catch (error) {
+      toast.error('Failed to move field. Please try again.');
+    }
+  };
+
+  // Click-to-add fallback method for when drag and drop fails
+  const handleFieldClickToAdd = (fieldType) => {
+    try {
+      const fieldData = {
+        type: fieldType,
+        label: `${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field`
+      };
+      
+      addFieldWithFallback(fieldData);
+    } catch (error) {
+      toast.error('Failed to add field. Please try again.');
+}
+  };
+
+  // Click-to-add fallback method for when drag and drop fails
+  const handleFieldClickToAdd = (fieldType) => {
+    try {
+      const fieldData = {
+        type: fieldType,
+        label: `${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field`
+      };
+      
+      addFieldWithFallback(fieldData);
+    } catch (error) {
+      toast.error('Failed to add field. Please try again.');
+    }
+  };
 
   // Style application
   const getFormWidthClass = () => {
@@ -697,11 +921,50 @@ const handleFieldDragEnd = (e) => {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-          {fields.length === 0 ? (
+{fields.length === 0 ? (
             <div className="text-center py-16 text-gray-500">
               <ApperIcon name="MousePointer2" className="w-12 h-12 mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-medium mb-2">Drop form fields here</p>
-              <p>Drag fields from the library to start building your form</p>
+              <p className="mb-6">Drag fields from the library to start building your form</p>
+              
+              {/* Fallback field addition methods */}
+              <div className="bg-gray-50 rounded-lg p-4 mt-6 max-w-md mx-auto">
+                <p className="text-sm font-medium text-gray-600 mb-3">
+                  Drag and drop not working? Try these alternatives:
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleFieldClickToAdd('text')}
+                    className="text-xs"
+                  >
+                    <ApperIcon name="Type" size={14} className="mr-1" />
+                    Add Text
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleFieldClickToAdd('email')}
+                    className="text-xs"
+                  >
+                    <ApperIcon name="Mail" size={14} className="mr-1" />
+                    Add Email
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleFieldClickToAdd('select')}
+                    className="text-xs"
+                  >
+                    <ApperIcon name="ChevronDown" size={14} className="mr-1" />
+                    Add Select
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-3">
+                  Double-click on library fields also works as a backup method
+                </p>
+              </div>
             </div>
           ) : (
             <>
