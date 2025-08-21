@@ -1,7 +1,15 @@
-import formsData from "@/services/mockData/forms.json";
+// Initialize ApperClient for database operations
+const { ApperClient } = window.ApperSDK;
+const apperClient = new ApperClient({
+  apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+  apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+});
 
-// Create a copy to prevent direct mutation of imported data
-let forms = [...formsData];
+// Database table name for forms
+const TABLE_NAME = "form_c";
+
+// In-memory forms storage (replace with actual database calls)
+let forms = [];
 
 // Function to generate next available ID
 const getNextId = () => {
