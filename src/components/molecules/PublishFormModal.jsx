@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import ApperIcon from "@/components/ApperIcon";
@@ -18,7 +18,7 @@ const PublishFormModal = ({ isOpen, onClose, form, onUnpublish }) => {
     large: { width: 800, height: 600, label: 'Large (800×600)' }
   };
 
-  const generateEmbedCode = () => {
+const generateEmbedCode = () => {
     const size = embedSizes[embedSize];
     return `<iframe src="${form.publishUrl}" width="${size.width}" height="${size.height}" frameborder="0" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"></iframe>`;
   };
@@ -126,12 +126,12 @@ const PublishFormModal = ({ isOpen, onClose, form, onUnpublish }) => {
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
-                      value={form.publishUrl || ''}
+value={form.publishUrl || ''}
                       readOnly
                       className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm font-mono text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                     <Button
-                      onClick={() => copyToClipboard(form.publishUrl, 'link')}
+                      onClick={() => copyToClipboard(form.publishUrl || '', 'link')}
                       disabled={copying}
                       variant="secondary"
                       size="sm"
@@ -187,7 +187,7 @@ const PublishFormModal = ({ isOpen, onClose, form, onUnpublish }) => {
                     Embed Code:
                   </label>
                   <div className="space-y-2">
-                    <textarea
+<textarea
                       value={generateEmbedCode()}
                       readOnly
                       rows={3}
@@ -244,13 +244,13 @@ const PublishFormModal = ({ isOpen, onClose, form, onUnpublish }) => {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button
-              onClick={copyToClipboard}
+<Button
+              onClick={() => copyToClipboard(form.publishUrl || '', 'link')}
               className="flex-1 inline-flex items-center justify-center gap-2"
               disabled={copying}
             >
               <ApperIcon name="Share2" className="w-4 h-4" />
-              Share Link
+              {copying ? "Copied!" : "Share Link"}
             </Button>
             <Button
               onClick={handleUnpublish}
