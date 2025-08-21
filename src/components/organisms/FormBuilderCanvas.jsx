@@ -453,20 +453,7 @@ const handleFieldDragEnd = (e) => {
     }
   };
 
-  // Click-to-add fallback method for when drag and drop fails
-  const handleFieldClickToAdd = (fieldType) => {
-    try {
-      const fieldData = {
-        type: fieldType,
-        label: `${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} Field`
-      };
-      
-      addFieldWithFallback(fieldData);
-    } catch (error) {
-      toast.error('Failed to add field. Please try again.');
-}
-  };
-
+// Style application
   // Click-to-add fallback method for when drag and drop fails
   const handleFieldClickToAdd = (fieldType) => {
     try {
