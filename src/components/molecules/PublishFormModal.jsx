@@ -3,7 +3,14 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
-
+const generateEmbedCode = () => {
+    if (!form?.publishId) return '';
+    
+    const embedUrl = `${window.location.origin}/form/${form.publishId}`;
+    const size = embedSizes[embedSize];
+    
+    return `<iframe src="${embedUrl}" width="${size.width}" height="${size.height}" frameborder="0" style="border: none; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></iframe>`;
+  };
 const PublishFormModal = ({ isOpen, onClose, form, onUnpublish }) => {
   const [copying, setCopying] = useState(false);
   const [activeTab, setActiveTab] = useState('share');
@@ -158,7 +165,7 @@ value={form.publishUrl || ''}
               </div>
             )}
 
-            {/* Embed Tab Content */}
+{/* Embed Tab Content */}
             {activeTab === 'embed' && (
               <div>
                 <div className="mb-4">
@@ -187,7 +194,7 @@ value={form.publishUrl || ''}
                     Embed Code:
                   </label>
                   <div className="space-y-2">
-<textarea
+                    <textarea
                       value={generateEmbedCode()}
                       readOnly
                       rows={3}
@@ -230,6 +237,16 @@ value={form.publishUrl || ''}
                   </div>
                 </div>
 
+                <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                  <div className="flex items-start gap-3">
+                    <ApperIcon name="Info" className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium mb-1">Deployment Required</p>
+                      <p>For embed codes to work, your form application must be deployed and accessible at the same domain as the embed URL. The form will not work in embeds until deployed.</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="bg-amber-50 rounded-lg p-4">
                   <div className="flex items-start gap-3">
                     <ApperIcon name="AlertCircle" className="w-5 h-5 text-amber-600 mt-0.5" />
@@ -240,8 +257,10 @@ value={form.publishUrl || ''}
                   </div>
                 </div>
               </div>
-            )}
+)}
           </div>
+
+          <div className="flex items-center gap-3">
 
           <div className="flex items-center gap-3">
 <Button
