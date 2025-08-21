@@ -3,7 +3,15 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
-const generateEmbedCode = () => {
+const [embedSize, setEmbedSize] = useState('medium');
+
+  const embedSizes = {
+    small: { width: '400', height: '600' },
+    medium: { width: '600', height: '800' },
+    large: { width: '800', height: '1000' }
+  };
+
+  const generateEmbedCode = (form) => {
     if (!form?.publishId) return '';
     
     const embedUrl = `${window.location.origin}/form/${form.publishId}`;
