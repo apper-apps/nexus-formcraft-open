@@ -157,17 +157,18 @@ const FormCard = ({ form, onEdit, onDelete, onDuplicate, onViewResponses }) => {
                 View Form
               </Button>
               
-              <Button
+<Button
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/form/${form.publishId}`);
-                  toast.success('Form link copied to clipboard!');
+                  const embedCode = `<iframe src="${window.location.origin}/form/${form.publishId}" width="600" height="450" frameborder="0" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"></iframe>`;
+                  navigator.clipboard.writeText(embedCode);
+                  toast.success('Embed code copied to clipboard!');
                 }}
                 className="flex-1 text-primary-600 hover:text-primary-700 hover:bg-primary-50"
               >
                 <ApperIcon name="Copy" className="w-4 h-4 mr-2" />
-                Copy Link
+                Copy Embed
               </Button>
             </div>
           )}
