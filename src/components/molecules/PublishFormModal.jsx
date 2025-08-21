@@ -3,22 +3,7 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
-const [embedSize, setEmbedSize] = useState('medium');
 
-  const embedSizes = {
-    small: { width: '400', height: '600' },
-    medium: { width: '600', height: '800' },
-    large: { width: '800', height: '1000' }
-  };
-
-  const generateEmbedCode = (form) => {
-    if (!form?.publishId) return '';
-    
-    const embedUrl = `${window.location.origin}/form/${form.publishId}`;
-    const size = embedSizes[embedSize];
-    
-    return `<iframe src="${embedUrl}" width="${size.width}" height="${size.height}" frameborder="0" style="border: none; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></iframe>`;
-  };
 const PublishFormModal = ({ isOpen, onClose, form, onUnpublish }) => {
   const [copying, setCopying] = useState(false);
   const [activeTab, setActiveTab] = useState('share');
@@ -33,7 +18,7 @@ const PublishFormModal = ({ isOpen, onClose, form, onUnpublish }) => {
     large: { width: 800, height: 600, label: 'Large (800×600)' }
   };
 
-const generateEmbedCode = () => {
+  const generateEmbedCode = () => {
     const size = embedSizes[embedSize];
     return `<iframe src="${form.publishUrl}" width="${size.width}" height="${size.height}" frameborder="0" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"></iframe>`;
   };
@@ -90,7 +75,7 @@ const generateEmbedCode = () => {
             </button>
           </div>
 
-<div className="mb-6">
+          <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
                 <ApperIcon name="Globe" className="w-5 h-5 text-success" />
@@ -141,7 +126,7 @@ const generateEmbedCode = () => {
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
-value={form.publishUrl || ''}
+                      value={form.publishUrl || ''}
                       readOnly
                       className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm font-mono text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
@@ -173,7 +158,7 @@ value={form.publishUrl || ''}
               </div>
             )}
 
-{/* Embed Tab Content */}
+            {/* Embed Tab Content */}
             {activeTab === 'embed' && (
               <div>
                 <div className="mb-4">
@@ -265,7 +250,7 @@ value={form.publishUrl || ''}
                   </div>
                 </div>
               </div>
-)}
+            )}
           </div>
 
           <div className="flex items-center gap-3">
