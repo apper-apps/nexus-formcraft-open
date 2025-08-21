@@ -69,24 +69,6 @@ fields: (formData.fields || []).map(field => ({
     return { ...form };
   },
 
-async create(formData) {
-    await delay();
-    const newForm = {
-      Id: Math.max(...forms.map(f => f.Id), 0) + 1,
-      ...formData,
-      isPublished: false,
-publishUrl: null,
-      submissionCount: 0,
-      createdAt: formData.createdAt || new Date().toISOString(),
-      style: formData.style || {
-        primaryColor: '#8B7FFF',
-        fontFamily: 'Inter',
-        formWidth: 'medium'
-      }
-    };
-    forms.unshift(newForm);
-    return { ...newForm };
-  },
 
 async update(id, formData) {
     await delay();
@@ -156,7 +138,7 @@ async getByPublishId(publishId) {
     return { ...form };
   },
 
-  async incrementSubmissionCount(formId) {
+async incrementSubmissionCount(formId) {
     await delay();
     const formIndex = forms.findIndex(f => f.Id === parseInt(formId));
     if (formIndex === -1) {
@@ -165,7 +147,16 @@ async getByPublishId(publishId) {
     forms[formIndex].submissionCount = (forms[formIndex].submissionCount || 0) + 1;
     forms[formIndex].updatedAt = new Date().toISOString();
     return { ...forms[formIndex] };
-},
+  },
+
+  async getByPublishId(publishId) {
+    await delay();
+    const form = forms.find(f => f.publishId === publishId && f.isPublished);
+    if (!form) {
+      throw new Error("Form not found or no longer available");
+    }
+    return { ...form };
+  },
 
   async getAnalytics(formId) {
     await delay();
