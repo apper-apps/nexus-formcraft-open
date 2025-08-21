@@ -144,9 +144,9 @@ const handleDragStart = (e, field) => {
       
       <div className="space-y-3">
         {fieldTypes.map((field, index) => (
-          <motion.div
+<motion.div
             key={field.type}
-className="field-item p-4 select-none"
+            className="field-item p-4 select-none group relative"
             draggable
             onDragStart={(e) => handleDragStart(e, field)}
             onDragEnd={handleDragEnd}
@@ -159,6 +159,11 @@ className="field-item p-4 select-none"
             onMouseDown={(e) => e.currentTarget.style.cursor = 'grabbing'}
             onMouseUp={(e) => e.currentTarget.style.cursor = 'grab'}
           >
+            {/* Drag handle indicator */}
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200">
+              <ApperIcon name="GripVertical" size={14} className="text-gray-400 group-hover:text-primary-500" />
+            </div>
+            
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg flex items-center justify-center flex-shrink-0">
                 <ApperIcon name={field.icon} className="w-5 h-5 text-primary-600" />

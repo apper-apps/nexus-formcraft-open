@@ -270,18 +270,18 @@ const handleFormNameChange = (newName) => {
     setShowSaveModal(true);
   };
 
-  const handleSaveForm = async (name) => {
+const handleSaveForm = async (name) => {
     try {
-const formData = {
+      const formData = {
         name,
         fields,
-style: formStyle,
+        style: formStyle,
         notifications: notificationSettings,
         thankYou: thankYouSettings,
         createdAt: isEditing ? undefined : new Date().toISOString()
       };
 
-if (isEditing) {
+      if (isEditing) {
         const updatedForm = await formService.update(parseInt(formId), formData);
         setCurrentForm(updatedForm);
         toast.success("Form updated successfully!");
@@ -295,7 +295,7 @@ if (isEditing) {
     } catch (err) {
       toast.error("Failed to save form. Please try again.");
     }
-};
+  };
 
   const handlePublish = async () => {
     if (!currentForm) {
@@ -349,7 +349,7 @@ return (
         onShowPublishModal={() => setShowPublishModal(true)}
         formStyle={formStyle}
         onStyleChange={handleStyleChange}
-notificationSettings={notificationSettings}
+        notificationSettings={notificationSettings}
         onNotificationSettingsChange={handleNotificationSettingsChange}
         thankYouSettings={thankYouSettings}
         onThankYouSettingsChange={handleThankYouSettingsChange}

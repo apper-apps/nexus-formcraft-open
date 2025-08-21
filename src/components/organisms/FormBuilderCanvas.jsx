@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
+import { toast } from 'react-toastify';
 import { motion } from "framer-motion";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
@@ -109,7 +110,7 @@ const handleDrop = (e) => {
     
     const transferData = e.dataTransfer.getData("application/json");
     if (!transferData) {
-      console.warn('No transfer data found');
+      toast.error('Drag operation failed - no data received');
       return;
     }
     
@@ -117,7 +118,7 @@ const handleDrop = (e) => {
     try {
       data = JSON.parse(transferData);
     } catch (err) {
-      console.error('Failed to parse transfer data:', err);
+      toast.error('Invalid drag data format');
       return;
     }
     
@@ -128,7 +129,7 @@ const handleDrop = (e) => {
       // Handle field reordering with improved logic
       const draggedFieldIndex = fields.findIndex(f => f.Id === data.fieldId);
       if (draggedFieldIndex === -1) {
-        console.warn('Dragged field not found');
+        toast.error('Could not find field to reorder');
         return;
       }
       
@@ -155,9 +156,9 @@ const handleDrop = (e) => {
       onFieldsChange(newFields);
       
       // Show success feedback
-      console.log('Field reordered successfully');
+      toast.success('Field reordered successfully');
     } else {
-// Handle new field from library
+      // Handle new field from library
       const newField = {
         Id: Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000), // Ensure unique integer ID
         type: data.type,
@@ -181,7 +182,7 @@ const handleDrop = (e) => {
       onFieldsChange(newFields);
       
       // Show success feedback and auto-select the new field
-      console.log(`${data.label || newField.label} added to form successfully`);
+      toast.success(`${data.label || newField.label} added to form`);
       setTimeout(() => {
         onFieldSelect(newField.Id);
       }, 100);
@@ -760,7 +761,7 @@ const handleFieldDragEnd = (e) => {
                           />
                         )}
                         
-                        <motion.div
+<motion.div
                           data-field-id={field.Id}
                           layout
                           draggable
@@ -788,12 +789,12 @@ const handleFieldDragEnd = (e) => {
                           whileTap={{ scale: 0.99 }}
                         >
                           {/* Enhanced drag handle indicator */}
+{/* Enhanced drag handle indicator */}
                           <div className={`absolute left-2 top-1/2 transform -translate-y-1/2 transition-all duration-200 ${
                             draggedFieldId === field.Id ? 'opacity-100 text-primary-500' : 'opacity-0 group-hover:opacity-100'
                           }`}>
                             <ApperIcon name="GripVertical" size={16} className="text-gray-400 group-hover:text-primary-500" />
                           </div>
-                          
                           <div className="flex items-start justify-between">
                             <div className="flex-1 space-y-3 ml-6">
                               <div className="flex items-center gap-2">
@@ -998,7 +999,7 @@ const handleFieldDragEnd = (e) => {
                         </motion.div>
                       ) : (
                         // Regular Field
-                        <motion.div
+<motion.div
                           data-field-id={field.Id}
                           layout
                           draggable
@@ -1135,13 +1136,13 @@ const handleFieldDragEnd = (e) => {
                                     removeField(field.Id);
                                   }
                                 }}
-                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Delete field"
                               >
                                 <ApperIcon name="X" size={16} className="text-gray-400 hover:text-red-500" />
                               </button>
                               <div 
-                                className="cursor-move p-2 text-gray-400 hover:text-primary-500 transition-colors"
+                                className="cursor-move p-2 text-gray-400 hover:text-primary-500 transition-colors group-hover:bg-primary-50 rounded-lg"
                                 title="Drag to reorder"
                               >
                                 <ApperIcon name="GripVertical" className="w-4 h-4" />

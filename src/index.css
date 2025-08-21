@@ -90,33 +90,73 @@
 /* Enhanced Drag and Drop Styles */
 .dragging {
   @apply opacity-60 transform scale-95 cursor-grabbing;
-  filter: brightness(1.1);
-  box-shadow: 0 8px 24px rgba(139, 127, 255, 0.2);
+  filter: brightness(1.1) saturate(1.2);
+  box-shadow: 0 12px 32px rgba(139, 127, 255, 0.3);
+  border: 2px solid rgba(139, 127, 255, 0.5);
+  z-index: 1000;
 }
 
 .drag-preview {
   @apply absolute pointer-events-none z-50 transform -translate-x-2 -translate-y-2 opacity-90;
-  filter: drop-shadow(0 12px 32px rgba(139, 127, 255, 0.3));
+  filter: drop-shadow(0 16px 40px rgba(139, 127, 255, 0.4));
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(244, 242, 255, 0.95) 0%, rgba(235, 231, 255, 0.95) 100%);
 }
 
 .drop-zone-highlight {
   @apply bg-gradient-to-br from-primary-50 to-primary-100 border-2 border-primary-400 border-dashed;
-  animation: pulse 2s infinite;
+  animation: dropZonePulse 2s ease-in-out infinite;
+  box-shadow: inset 0 0 20px rgba(139, 127, 255, 0.1);
 }
 
 .field-item:hover {
   @apply cursor-grab;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 .field-item:active {
   @apply cursor-grabbing;
+  transform: scale(0.98);
 }
 
 /* Enhanced drop indicators */
 .drop-indicator {
   @apply h-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-400 rounded-full;
-  box-shadow: 0 0 8px rgba(139, 127, 255, 0.4);
-  animation: pulse 1.5s infinite;
+  box-shadow: 0 0 12px rgba(139, 127, 255, 0.6);
+  animation: dropIndicatorPulse 1.5s ease-in-out infinite;
+}
+
+/* Custom animations for enhanced feedback */
+@keyframes dropZonePulse {
+  0%, 100% {
+    background-color: rgba(244, 242, 255, 0.5);
+    border-color: rgba(139, 127, 255, 0.4);
+  }
+  50% {
+    background-color: rgba(235, 231, 255, 0.7);
+    border-color: rgba(139, 127, 255, 0.6);
+  }
+}
+
+@keyframes dropIndicatorPulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.2);
+  }
+}
+
+/* Drag handle states */
+.field-item .group-hover\:opacity-100 {
+  transition: opacity 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.field-item:hover .group-hover\:opacity-100 {
+  opacity: 1;
 }
 /* Form Preview Styles */
 .form-preview {
