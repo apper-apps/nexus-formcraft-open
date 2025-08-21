@@ -24,21 +24,41 @@ const [formData, setFormData] = useState({});
     loadForm();
   }, [publishId]);
 
-  const loadForm = async () => {
+const loadForm = async () => {
     try {
       setError("");
       setLoading(true);
+      
+      if (!publishId) {
+        throw new Error("Invalid form URL");
+      }
+      
       const publishedForm = await formService.getByPublishId(publishId);
       setForm(publishedForm);
       
-      // Initialize form data
+      // Initialize form data with proper defaults
       const initialData = {};
-      publishedForm.fields.forEach(field => {
-        initialData[field.Id] = field.type === "checkbox" ? false : "";
-      });
+      if (publishedForm.fields && publishedForm.fields.length > 0) {
+        publishedForm.fields.forEach(field => {
+          switch (field.type) {
+            case "checkbox":
+              initialData[field.Id] = false;
+              break;
+            case "number":
+              initialData[field.Id] = "";
+              break;
+            case "select":
+              initialData[field.Id] = "";
+              break;
+            default:
+              initialData[field.Id] = "";
+          }
+        });
+      }
       setFormData(initialData);
     } catch (err) {
-      setError("Form not found or no longer available");
+      console.error('Error loading form:', err);
+      setError(err.message || "Form not found or no longer available");
     } finally {
       setLoading(false);
     }
@@ -114,6 +134,11 @@ const visibleFields = getVisibleFields(form.fields, formData);
 const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!form || !form.Id) {
+      toast.error("Form data is not available. Please refresh the page.");
+      return;
+    }
+    
     const validationErrors = validateForm();
     if (validationErrors.length > 0) {
       toast.error("Please correct the errors below before submitting");
@@ -125,7 +150,7 @@ const handleSubmit = async (e) => {
       // Import response service dynamically to avoid circular dependency
       const { responseService } = await import('@/services/api/responseService');
       
-      // Save form response
+      // Save form response with validated data
       await responseService.create(form.Id, formData);
       
       // Increment form submission count
@@ -133,9 +158,17 @@ const handleSubmit = async (e) => {
       
       setSubmitted(true);
       toast.success(form.settings?.successMessage || "Form submitted successfully!");
+      
+      // Clear form data after successful submission
+      const clearedData = {};
+      form.fields.forEach(field => {
+        clearedData[field.Id] = field.type === "checkbox" ? false : "";
+      });
+      setFormData(clearedData);
+      
     } catch (err) {
       console.error('Form submission error:', err);
-      toast.error("Failed to submit form. Please try again.");
+      toast.error(err.message || "Failed to submit form. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -333,30 +366,39 @@ if (submitted) {
     );
   }
 
-  return (
+return (
     <div className="min-h-screen bg-surface">
-<div 
-        className={`px-4 py-8 mx-auto ${
-          form.style?.formWidth === 'narrow' ? 'max-w-lg' :
-          form.style?.formWidth === 'wide' ? 'max-w-4xl' : 'max-w-2xl'
-        } ${
-          form.style?.fontFamily === 'Plus Jakarta Sans' ? 'font-display' :
-          form.style?.fontFamily === 'Georgia' ? 'font-serif' :
-          form.style?.fontFamily === 'Courier New' ? 'font-mono' : 'font-sans'
-        }`}
-        style={{
-          '--primary-color': form.style?.primaryColor || '#8B7FFF',
-          '--primary-50': (form.style?.primaryColor || '#8B7FFF') + '0D',
-          '--primary-100': (form.style?.primaryColor || '#8B7FFF') + '1A',
-          '--primary-200': (form.style?.primaryColor || '#8B7FFF') + '33',
-          '--primary-300': (form.style?.primaryColor || '#8B7FFF') + '4D',
-          '--primary-400': (form.style?.primaryColor || '#8B7FFF') + '66',
-          '--primary-500': form.style?.primaryColor || '#8B7FFF',
-          '--primary-600': (form.style?.primaryColor || '#8B7FFF') + 'E6',
-          '--primary-700': (form.style?.primaryColor || '#8B7FFF') + 'CC'
-        }}
-      >
-        <motion.div
+      {loading && <Loading />}
+      
+      {error && !loading && (
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <Error message={error} />
+        </div>
+      )}
+      
+      {form && !loading && !error && (
+        <div 
+          className={`px-4 py-8 mx-auto ${
+            form.style?.formWidth === 'narrow' ? 'max-w-lg' :
+            form.style?.formWidth === 'wide' ? 'max-w-4xl' : 'max-w-2xl'
+          } ${
+            form.style?.fontFamily === 'Plus Jakarta Sans' ? 'font-display' :
+            form.style?.fontFamily === 'Georgia' ? 'font-serif' :
+            form.style?.fontFamily === 'Courier New' ? 'font-mono' : 'font-sans'
+          }`}
+          style={{
+            '--primary-color': form.style?.primaryColor || '#8B7FFF',
+            '--primary-50': (form.style?.primaryColor || '#8B7FFF') + '0D',
+            '--primary-100': (form.style?.primaryColor || '#8B7FFF') + '1A',
+            '--primary-200': (form.style?.primaryColor || '#8B7FFF') + '33',
+            '--primary-300': (form.style?.primaryColor || '#8B7FFF') + '4D',
+            '--primary-400': (form.style?.primaryColor || '#8B7FFF') + '66',
+            '--primary-500': form.style?.primaryColor || '#8B7FFF',
+            '--primary-600': (form.style?.primaryColor || '#8B7FFF') + 'E6',
+            '--primary-700': (form.style?.primaryColor || '#8B7FFF') + 'CC'
+'--primary-700': (form.style?.primaryColor || '#8B7FFF') + 'CC'
+          }}
+        >
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-xl shadow-card p-8"

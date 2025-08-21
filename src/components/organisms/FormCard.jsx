@@ -145,12 +145,18 @@ const FormCard = ({ form, onEdit, onDelete, onDuplicate, onViewResponses }) => {
             />
           )}
 
-          {form.isPublished && activeTab === 'overview' && (
+{form.isPublished && activeTab === 'overview' && (
             <div className="flex gap-2 pt-4 border-t border-gray-100">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => window.open(`/form/${form.publishId}`, '_blank')}
+                onClick={() => {
+                  if (form.publishId) {
+                    window.open(`/form/${form.publishId}`, '_blank');
+                  } else {
+                    toast.error('Form URL is not available');
+                  }
+                }}
                 className="flex-1 text-success hover:text-success-dark hover:bg-success-light"
               >
                 <ApperIcon name="ExternalLink" className="w-4 h-4 mr-2" />
@@ -161,9 +167,13 @@ const FormCard = ({ form, onEdit, onDelete, onDuplicate, onViewResponses }) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  const embedCode = `<iframe src="${window.location.origin}/form/${form.publishId}" width="600" height="450" frameborder="0" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"></iframe>`;
-                  navigator.clipboard.writeText(embedCode);
-                  toast.success('Embed code copied to clipboard!');
+                  if (form.publishId) {
+                    const embedCode = `<iframe src="${window.location.origin}/form/${form.publishId}" width="600" height="450" frameborder="0" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);"></iframe>`;
+                    navigator.clipboard.writeText(embedCode);
+                    toast.success('Embed code copied to clipboard!');
+                  } else {
+                    toast.error('Form URL is not available');
+                  }
                 }}
                 className="flex-1 text-primary-600 hover:text-primary-700 hover:bg-primary-50"
               >

@@ -133,7 +133,7 @@ async getByPublishId(publishId) {
     await delay();
     const form = forms.find(f => f.publishId === publishId && f.isPublished);
     if (!form) {
-      throw new Error("Published form not found");
+      throw new Error("Form not found or no longer available");
     }
     return { ...form };
   },
@@ -147,16 +147,7 @@ async incrementSubmissionCount(formId) {
     forms[formIndex].submissionCount = (forms[formIndex].submissionCount || 0) + 1;
     forms[formIndex].updatedAt = new Date().toISOString();
     return { ...forms[formIndex] };
-  },
-
-  async getByPublishId(publishId) {
-    await delay();
-    const form = forms.find(f => f.publishId === publishId && f.isPublished);
-    if (!form) {
-      throw new Error("Form not found or no longer available");
-    }
-    return { ...form };
-  },
+},
 
   async getAnalytics(formId) {
     await delay();
