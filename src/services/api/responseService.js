@@ -1,7 +1,7 @@
-import { formsData } from "@/services/mockData/forms.json";
 import { emailService } from "./emailService";
 import { toast } from "react-toastify";
-// Create a copy to prevent direct mutation of imported data
+
+// Mock responses storage
 let responses = [];
 let nextResponseId = 1;
 
@@ -15,7 +15,7 @@ function getNextResponseId() {
 }
 
 export const responseService = {
-async create(formId, responseData) {
+  async create(formId, responseData) {
     await delay();
     const newResponse = {
       Id: getNextResponseId(),
@@ -93,7 +93,7 @@ async create(formId, responseData) {
 
   async getResponseCount(formId) {
     await delay();
-return responses.filter(r => r.formId === parseInt(formId)).length;
+    return responses.filter(r => r.formId === parseInt(formId)).length;
   },
 
   exportToCSV(form, responses) {
@@ -158,7 +158,7 @@ return responses.filter(r => r.formId === parseInt(formId)).length;
       ];
 
       form.fields.forEach(field => {
-        const fieldValue = response.data[field.name] || response.data[field.id] || '';
+        const fieldValue = response.data[field.Id] || '';
         const formattedValue = formatFieldValue(field, fieldValue);
         row.push(formattedValue);
       });
@@ -166,7 +166,7 @@ return responses.filter(r => r.formId === parseInt(formId)).length;
       csvContent += row.map(escapeCSV).join(',') + '\n';
     });
 
-return csvContent;
+    return csvContent;
   },
 
   filterResponses(responses, filters) {

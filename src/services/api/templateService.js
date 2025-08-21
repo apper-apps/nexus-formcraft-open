@@ -1,4 +1,6 @@
-import { templatesData } from "@/services/mockData/templates.json";
+import templatesData from "@/services/mockData/templates.json";
+import React from "react";
+import Error from "@/components/ui/Error";
 
 // Create a copy to prevent direct mutation of imported data
 let templates = [...templatesData];
@@ -33,7 +35,7 @@ export const templateService = {
   async getFeatured() {
     await delay();
     // Return the most commonly used templates
-    const featuredIds = [1, 2, 3, 4, 5];
+    const featuredIds = [1, 2, 3];
     return templates.filter(t => featuredIds.includes(t.Id)).map(t => JSON.parse(JSON.stringify(t)));
   },
 
@@ -46,6 +48,6 @@ export const templateService = {
       t.name.toLowerCase().includes(lowerQuery) ||
       t.description.toLowerCase().includes(lowerQuery) ||
       t.category.toLowerCase().includes(lowerQuery)
-    ).map(t => JSON.parse(JSON.stringify(t)));
+).map(t => JSON.parse(JSON.stringify(t)));
   }
 };

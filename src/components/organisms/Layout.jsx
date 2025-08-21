@@ -1,10 +1,26 @@
-import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useState, useContext } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import Sidebar from "@/components/organisms/Sidebar";
 import ApperIcon from "@/components/ApperIcon";
+import Button from "@/components/atoms/Button";
+import { AuthContext } from "../../App";
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
+  const { user, isAuthenticated } = useSelector((state) => state.user);
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    navigate('/login');
+    return null;
+  }
 
   return (
     <div className="h-screen bg-surface flex overflow-hidden">
@@ -33,7 +49,38 @@ const Layout = () => {
               </h1>
             </div>
             
-            <div className="w-10" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center gap-2"
+            >
+              <ApperIcon name="LogOut" className="w-4 h-4" />
+              Logout
+            </Button>
+          </div>
+        </div>
+
+        {/* Desktop header with user info and logout */}
+        <div className="hidden lg:block bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h2 className="text-2xl font-display font-bold text-gray-900">FormCraft</h2>
+              {user && (
+                <div className="text-sm text-gray-600">
+                  Welcome, {user.firstName || user.name || user.emailAddress}
+                </div>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <ApperIcon name="LogOut" className="w-4 h-4" />
+              Logout
+            </Button>
           </div>
         </div>
         

@@ -1,5 +1,5 @@
-import { formsData } from "@/services/mockData/forms.json";
-import { responseService } from "./responseService";
+import formsData from "@/services/mockData/forms.json";
+
 // Create a copy to prevent direct mutation of imported data
 let forms = [...formsData];
 
@@ -20,13 +20,13 @@ export const formService = {
     return forms.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   },
 
-async create(formData) {
-await delay();
-const newForm = {
+  async create(formData) {
+    await delay();
+    const newForm = {
       Id: getNextId(),
       name: formData.name || "Untitled Form",
       description: formData.description || "",
-fields: (formData.fields || []).map(field => ({
+      fields: (formData.fields || []).map(field => ({
         ...field,
         showCondition: field.showCondition || {
           enabled: false,
@@ -53,6 +53,7 @@ fields: (formData.fields || []).map(field => ({
       updatedAt: new Date().toISOString(),
       isPublished: false,
       publishUrl: null,
+      publishId: null,
       submissionCount: 0
     };
     
@@ -69,16 +70,16 @@ fields: (formData.fields || []).map(field => ({
     return { ...form };
   },
 
-
-async update(id, formData) {
+  async update(id, formData) {
     await delay();
     const index = forms.findIndex(f => f.Id === id);
     if (index === -1) {
-throw new Error("Form not found");
+      throw new Error("Form not found");
     }
-const updatedForm = {
+    const updatedForm = {
       ...forms[index],
       ...formData,
+      updatedAt: new Date().toISOString(),
       fields: (formData.fields || forms[index].fields || []).map(field => ({
         ...field,
         showCondition: field.showCondition || {
@@ -94,7 +95,7 @@ const updatedForm = {
       }
     };
     forms[index] = updatedForm;
-    return updatedForm;
+    return { ...updatedForm };
   },
 
   async publish(id) {
@@ -109,7 +110,8 @@ const updatedForm = {
       ...forms[index], 
       isPublished: true, 
       publishUrl,
-      publishId 
+      publishId,
+      updatedAt: new Date().toISOString()
     };
     return { ...forms[index] };
   },
@@ -124,12 +126,13 @@ const updatedForm = {
       ...forms[index], 
       isPublished: false, 
       publishUrl: null,
-      publishId: null 
+      publishId: null,
+      updatedAt: new Date().toISOString()
     };
     return { ...forms[index] };
   },
 
-async getByPublishId(publishId) {
+  async getByPublishId(publishId) {
     await delay();
     const form = forms.find(f => f.publishId === publishId && f.isPublished);
     if (!form) {
@@ -138,7 +141,7 @@ async getByPublishId(publishId) {
     return { ...form };
   },
 
-async incrementSubmissionCount(formId) {
+  async incrementSubmissionCount(formId) {
     await delay();
     const formIndex = forms.findIndex(f => f.Id === parseInt(formId));
     if (formIndex === -1) {
@@ -147,7 +150,7 @@ async incrementSubmissionCount(formId) {
     forms[formIndex].submissionCount = (forms[formIndex].submissionCount || 0) + 1;
     forms[formIndex].updatedAt = new Date().toISOString();
     return { ...forms[formIndex] };
-},
+  },
 
   async getAnalytics(formId) {
     await delay();
@@ -156,6 +159,8 @@ async incrementSubmissionCount(formId) {
       throw new Error("Form not found");
     }
 
+    // Import responseService dynamically to avoid circular dependency
+    const { responseService } = await import('./responseService');
     const responses = await responseService.getByFormId(formId);
     const totalResponses = responses.length;
     
@@ -198,6 +203,7 @@ async incrementSubmissionCount(formId) {
       responseRate: totalResponses > 0 ? Math.round((thisWeekResponses / 7) * 100) : 0
     };
   },
+
   async delete(id) {
     await delay();
     const index = forms.findIndex(f => f.Id === id);
