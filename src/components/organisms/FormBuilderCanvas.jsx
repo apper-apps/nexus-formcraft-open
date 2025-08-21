@@ -98,10 +98,10 @@ const handleDragLeave = (e) => {
   };
 
 // Comprehensive field validation function
-  const validateFieldData = (data) => {
+const validateFieldData = (data) => {
     const supportedTypes = [
       'text', 'email', 'number', 'textarea', 'select', 'radio', 
-      'checkbox', 'date', 'time', 'url', 'tel', 'password', 
+      'checkbox', 'date', 'time', 'url', 'tel', 'phone', 'password', 
       'file', 'rating', 'slider', 'page-break', 'heading', 'paragraph'
     ];
 
