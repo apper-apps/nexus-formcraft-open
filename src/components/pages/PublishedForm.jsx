@@ -377,7 +377,7 @@ return (
       )}
       
       {form && !loading && !error && (
-        <div 
+<div 
           className={`px-4 py-8 mx-auto ${
             form.style?.formWidth === 'narrow' ? 'max-w-lg' :
             form.style?.formWidth === 'wide' ? 'max-w-4xl' : 'max-w-2xl'
@@ -396,13 +396,13 @@ return (
             '--primary-500': form.style?.primaryColor || '#8B7FFF',
             '--primary-600': (form.style?.primaryColor || '#8B7FFF') + 'E6',
             '--primary-700': (form.style?.primaryColor || '#8B7FFF') + 'CC'
-'--primary-700': (form.style?.primaryColor || '#8B7FFF') + 'CC'
           }}
         >
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl shadow-card p-8"
-        >
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-xl shadow-card p-8"
+          >
           <div className="mb-8">
             <h1 className="text-3xl font-display font-bold text-gray-900 mb-2">
               {form.name}
@@ -692,9 +692,10 @@ transition={{ duration: 0.3 }}
                 </div>
               </form>
             );
-          })()}
+})()}
         </motion.div>
       </div>
+      )}
     </div>
   );
 };
