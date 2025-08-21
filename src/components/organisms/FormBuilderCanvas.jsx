@@ -849,9 +849,9 @@ const handleFieldDragEnd = (e) => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Current Recipients ({notificationSettings.recipients.length})
                     </label>
-                    <div className="space-y-2">
+<div className="space-y-2">
                       {notificationSettings.recipients.map((email, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                        <div key={`recipient-${index}`} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
                           <div className="flex items-center gap-2">
                             <ApperIcon name="Mail" className="w-4 h-4 text-gray-400" />
                             <span className="text-sm text-gray-700">{email}</span>
@@ -1334,8 +1334,8 @@ const handleFieldDragEnd = (e) => {
                               {field.type === "select" && (
                                 <div className="space-y-2">
                                   <label className="text-sm font-medium text-gray-700">Options:</label>
-                                  {field.options.map((option, optionIndex) => (
-                                    <div key={optionIndex} className="flex items-center gap-2">
+{field.options.map((option, optionIndex) => (
+                                    <div key={`option-${field.Id}-${optionIndex}`} className="flex items-center gap-2">
                                       <input
                                         type="text"
                                         value={option}
